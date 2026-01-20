@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 
 class AppColors {
   AppColors._(); // prevents instantiation
-  static const Color primaryBlue = Color(0xFF3F51B5);
+  static const Color primary = Color(0xFF3F51B5);
+  static const Color secondary = Color.fromARGB(255, 114, 140, 255);
   static const Color lightBlueBackground = Color(0xFFEAF0FA);
   static const Color textWhite = Colors.white;
   static const Color textGrey = Colors.grey;

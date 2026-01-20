@@ -22,14 +22,15 @@ class AppDropdownField<T> extends StatelessWidget {
   Widget build(BuildContext context) {
     return Row(
       children: [
-        Text("$title :",
-            style: Theme.of(context)
-                .textTheme
-                .bodyMedium!
-                .copyWith(fontWeight: FontWeight.bold)),
+        Text(
+          "$title :",
+          style: Theme.of(
+            context,
+          ).textTheme.bodyMedium!.copyWith(fontWeight: FontWeight.bold),
+        ),
         Expanded(
           child: DropdownButtonFormField<T>(
-            value: value,
+            // value: value,
             onChanged: onChanged,
             items: options.map((T option) {
               return DropdownMenuItem<T>(
@@ -40,8 +41,10 @@ class AppDropdownField<T> extends StatelessWidget {
                 ),
               );
             }).toList(),
-            hint: Text("Select here",
-                style: Theme.of(context).textTheme.bodyMedium!),
+            hint: Text(
+              "Select here",
+              style: Theme.of(context).textTheme.bodyMedium!,
+            ),
             decoration: const InputDecoration(
               border: InputBorder.none,
               contentPadding: EdgeInsets.only(left: 8),

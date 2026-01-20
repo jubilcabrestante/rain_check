@@ -53,3 +53,5 @@ app.*.map.json
 /android/kotlin/
 
 firebase.json
+
+/lib/firebase_options.dart

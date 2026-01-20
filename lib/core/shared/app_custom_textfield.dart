@@ -1,81 +1,66 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:rain_check/app/themes/colors.dart';
 
-class AppCustomTextfield extends StatefulWidget {
-  final TextEditingController controller;
-  final String? hintText;
-  final String label;
+class AppTextFormField extends StatelessWidget {
+  final FocusNode? focusNode;
   final bool? isPassword;
-  final EdgeInsetsGeometry? padding;
-  final String? type;
-  final int? maxLines;
+  final bool? isShowPassword;
+  final TextInputType? keyboardType;
+  final TextInputAction? textInputAction;
+  final Function(bool)? onPressed;
+  final TextEditingController? controller;
   final String? Function(String?)? validator;
-
-  const AppCustomTextfield({
+  final String hintText;
+  final List<TextInputFormatter>? inputFormatters;
+  final void Function(String)? onChanged;
+  const AppTextFormField({
     super.key,
-    this.type,
-    required this.controller,
-    this.isPassword = false,
-    this.hintText,
-    required this.label,
-    this.padding,
-    this.maxLines,
+    this.focusNode,
+    this.controller,
     this.validator,
+    required this.hintText,
+    this.isPassword = false,
+    this.isShowPassword,
+    this.onPressed,
+    this.keyboardType,
+    this.textInputAction,
+    this.inputFormatters,
+    this.onChanged,
   });
 
   @override
-  State<AppCustomTextfield> createState() => _AppCustomTextfieldState();
-}
-
-class _AppCustomTextfieldState extends State<AppCustomTextfield> {
-  late bool _obscureText;
-
-  @override
-  void initState() {
-    super.initState();
-    _obscureText = widget.isPassword ?? false;
-  }
-
-  @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: widget.padding ?? const EdgeInsets.symmetric(vertical: 8.0),
-      child: TextFormField(
-        controller: widget.controller,
-        obscureText: widget.isPassword == true ? _obscureText : false,
-        validator: widget.validator,
-        keyboardType: _getKeyboardType(widget.type),
-        maxLines: widget.isPassword == true ? 1 : widget.maxLines,
-        decoration: InputDecoration(
-          labelText: widget.label,
-          hintText: widget.hintText,
-          border: OutlineInputBorder(borderRadius: BorderRadius.circular(15)),
-          suffixIcon: widget.isPassword == true
-              ? IconButton(
-                  icon: Icon(
-                    _obscureText ? Icons.visibility_off : Icons.visibility,
-                  ),
-                  onPressed: () {
-                    setState(() {
-                      _obscureText = !_obscureText;
-                    });
-                  },
-                )
-              : null,
-        ),
+    var theme = Theme.of(context).textTheme;
+    var style = theme.bodyMedium;
+    return TextFormField(
+      focusNode: focusNode,
+      onChanged: onChanged,
+      textInputAction: textInputAction,
+      keyboardType: keyboardType,
+      obscureText: isPassword! ? isShowPassword! : false,
+      controller: controller,
+      autovalidateMode: AutovalidateMode.onUserInteraction,
+      decoration: InputDecoration(
+        label: Text(hintText, style: theme.bodyMedium),
+        hintText: hintText,
+        suffixIcon: isPassword!
+            ? IconButton(
+                onPressed: () {
+                  isShowPassword != !isShowPassword!;
+                  bool value = !isShowPassword!;
+                  onPressed?.call(value);
+                },
+                icon: Icon(
+                  isShowPassword! ? Icons.visibility : Icons.visibility_off,
+                ),
+              )
+            : null,
       ),
+      style: style,
+      cursorColor: AppColors.primary,
+      validator: validator,
+      inputFormatters: inputFormatters,
     );
-  }
-
-  TextInputType _getKeyboardType(String? type) {
-    switch (type) {
-      case 'number':
-        return TextInputType.number;
-      case 'email':
-        return TextInputType.emailAddress;
-      case 'phone':
-        return TextInputType.phone;
-      default:
-        return TextInputType.text;
-    }
   }
 }

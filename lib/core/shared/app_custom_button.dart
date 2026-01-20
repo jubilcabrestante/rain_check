@@ -1,51 +1,61 @@
 import 'package:flutter/material.dart';
+import 'package:rain_check/app/themes/colors.dart';
 
-class AppCustomButton extends StatelessWidget {
-  final String? text;
-  final VoidCallback? ontab;
-  final Color? backgroundColor;
-  final Color? textColor;
-  final Widget? child;
-  final bool? isActive;
+class AppElevatedButton extends StatelessWidget {
   final double? width;
-  final double? height;
-  final double? padding;
-
-  const AppCustomButton({
+  final void Function()? onPressed;
+  final String text;
+  final bool? isLoading;
+  final Color? color;
+  final double? borderRadius;
+  const AppElevatedButton({
     super.key,
+    this.onPressed,
+    required this.text,
+    this.isLoading = false,
+    this.color,
+    this.borderRadius = 16,
     this.width,
-    this.padding,
-    this.height,
-    this.text,
-    this.ontab,
-    this.backgroundColor,
-    this.textColor,
-    this.child,
-    this.isActive = false,
   });
 
   @override
   Widget build(BuildContext context) {
-    var colorScheme = ThemeData().colorScheme;
-    var textTheme = ThemeData().textTheme;
-
-    return InkWell(
-      onTap: ontab,
-      child: Container(
+    return IgnorePointer(
+      ignoring: isLoading!,
+      child: SizedBox(
         width: width,
-        height: height,
-        padding: padding != null
-            ? EdgeInsets.all(padding!)
-            : EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-        decoration: BoxDecoration(
-          color: isActive!
-              ? colorScheme.primary
-              : backgroundColor ?? colorScheme.secondary,
-          borderRadius: BorderRadius.circular(10),
+        child: ElevatedButton(
+          onPressed: onPressed,
+          style: ButtonStyle(
+            backgroundColor: color == null
+                ? null
+                : WidgetStatePropertyAll(color),
+            shape: WidgetStatePropertyAll(
+              RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(borderRadius!),
+              ),
+            ),
+          ),
+          child: Builder(
+            builder: (context) {
+              if (isLoading!) {
+                return const Center(
+                  child: SizedBox(
+                    height: 25,
+                    width: 25,
+                    child: CircularProgressIndicator(
+                      color: AppColors.secondary,
+                    ),
+                  ),
+                );
+              }
+              return Text(
+                text,
+                // style: Theme.of(context).textTheme.bodyMedium,
+              );
+            },
+          ),
         ),
-        constraints: const BoxConstraints(minWidth: 0, minHeight: 0),
-        child:
-            child ?? Text(text ?? '', style: textTheme.bodyMedium!.copyWith()),
       ),
     );
   }

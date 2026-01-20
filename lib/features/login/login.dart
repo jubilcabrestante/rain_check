@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:gap/gap.dart';
 import 'package:rain_check/app/router/router.gr.dart';
 import 'package:rain_check/core/shared/app_custom_button.dart';
-import 'package:rain_check/core/shared/app_custom_loading_indicator.dart';
 import 'package:rain_check/core/shared/app_custom_textfield.dart';
 
 @RoutePage()
@@ -17,7 +16,7 @@ class LoginScreen extends StatefulWidget {
 class _LoginScreenState extends State<LoginScreen> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
-  bool _isLoading = false;
+  bool _isPasswordVisible = false;
 
   @override
   void dispose() {
@@ -31,208 +30,209 @@ class _LoginScreenState extends State<LoginScreen> {
     return Scaffold(
       backgroundColor: const Color(0xFFF5F7FA),
       body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 24),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              const Gap(60),
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final isDesktop = constraints.maxWidth >= 900;
+            final isTablet = constraints.maxWidth >= 600;
 
-              // Cloud Icon
-              const Center(
-                child: CircleAvatar(
-                  radius: 60,
-                  backgroundColor: Colors.white,
-                  child: Icon(Icons.cloud, size: 60, color: Color(0xFF5B9FD8)),
+            final maxWidth = isDesktop
+                ? 420.0
+                : isTablet
+                ? 480.0
+                : double.infinity;
+
+            final horizontalPadding = isDesktop ? 0.0 : 24.0;
+
+            return Center(
+              child: SingleChildScrollView(
+                padding: EdgeInsets.symmetric(
+                  horizontal: horizontalPadding,
+                  vertical: 24,
                 ),
-              ),
-              const Gap(32),
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(maxWidth: maxWidth),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Gap(isDesktop ? 40 : 24),
 
-              // Title & Subtitle
-              const Center(
-                child: Column(
-                  children: [
-                    Text(
-                      'Rain Check',
-                      style: TextStyle(
-                        fontSize: 36,
-                        fontWeight: FontWeight.bold,
-                        color: Color(0xFF1A1F36),
-                        letterSpacing: -0.5,
+                      // Logo
+                      const Center(
+                        child: CircleAvatar(
+                          radius: 60,
+                          backgroundColor: Colors.white,
+                          child: Icon(
+                            Icons.cloud,
+                            size: 60,
+                            color: Color(0xFF5B9FD8),
+                          ),
+                        ),
                       ),
-                    ),
-                    Gap(8),
-                    Text(
-                      'Elevate your daily planning',
-                      style: TextStyle(
-                        fontSize: 16,
-                        color: Color(0xFF8B94A8),
-                        fontWeight: FontWeight.w400,
+                      const Gap(24),
+
+                      // Title
+                      const Center(
+                        child: Column(
+                          children: [
+                            Text(
+                              'Rain Check',
+                              style: TextStyle(
+                                fontSize: 36,
+                                fontWeight: FontWeight.bold,
+                                color: Color(0xFF1A1F36),
+                              ),
+                            ),
+                            Gap(8),
+                            Text(
+                              'Elevate your daily planning',
+                              style: TextStyle(
+                                fontSize: 16,
+                                color: Color(0xFF8B94A8),
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
-                    ),
-                  ],
-                ),
-              ),
-              const Gap(48),
 
-              // Email Field
-              AppCustomTextfield(
-                controller: _emailController,
-                label: 'EMAIL',
-                hintText: 'hello@raincheck.com',
-                type: 'email',
-              ),
+                      Gap(isDesktop ? 48 : 32),
 
-              // Password Field
-              AppCustomTextfield(
-                controller: _passwordController,
-                label: 'PASSWORD',
-                hintText: '••••••••',
-                isPassword: true,
-              ),
-
-              const Gap(16),
-
-              // Forgot Password
-              Align(
-                alignment: Alignment.centerRight,
-                child: TextButton(
-                  onPressed: () {},
-                  style: TextButton.styleFrom(
-                    padding: EdgeInsets.zero,
-                    minimumSize: Size.zero,
-                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                  ),
-                  child: const Text(
-                    'Forgot Password?',
-                    style: TextStyle(
-                      color: Color(0xFF5B9FD8),
-                      fontSize: 14,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                ),
-              ),
-
-              const Gap(24),
-
-              // Sign In Button
-              // TODO: Implement sign-in functionality
-              AppCustomButton(
-                text: _isLoading ? null : 'Sign In',
-                ontab: () {
-                  context.router.push(const MainAppRoute());
-                },
-                backgroundColor: const Color(0xFF5DBAEC),
-                textColor: Colors.white,
-                height: 52,
-                child: _isLoading
-                    ? const AppCustomLoadingIndicator(size: 20)
-                    : null,
-              ),
-
-              const Gap(32),
-
-              // OR Divider
-              Row(
-                children: [
-                  Expanded(
-                    child: Container(height: 1, color: const Color(0xFFE1E5EB)),
-                  ),
-                  const Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 16),
-                    child: Text(
-                      'OR',
-                      style: TextStyle(
-                        color: Color(0xFF8B94A8),
-                        fontSize: 12,
-                        fontWeight: FontWeight.w500,
-                        letterSpacing: 1.2,
+                      // Email
+                      AppTextFormField(
+                        controller: _emailController,
+                        hintText: 'hello@raincheck.com',
+                        keyboardType: TextInputType.emailAddress,
+                        textInputAction: TextInputAction.next,
+                        validator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return 'Email is required';
+                          }
+                          if (!value.contains('@')) {
+                            return 'Enter a valid email';
+                          }
+                          return null;
+                        },
                       ),
-                    ),
-                  ),
-                  Expanded(
-                    child: Container(height: 1, color: const Color(0xFFE1E5EB)),
-                  ),
-                ],
-              ),
 
-              const Gap(32),
+                      const Gap(16),
 
-              // Google Sign In
-              AppCustomButton(
-                // TODO: Implement Google sign-in functionality
-                ontab: () {},
-                backgroundColor: Colors.white,
-                height: 52,
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Image.network(
-                      'https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg',
-                      height: 20,
-                      width: 20,
-                    ),
-                    const Gap(8),
-                    const Text('Continue with Google'),
-                  ],
-                ),
-              ),
-
-              const Gap(16),
-
-              // Phone Sign In
-              AppCustomButton(
-                // TODO: Implement phone sign-in functionality
-                ontab: () {},
-                backgroundColor: Colors.white,
-                height: 52,
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: const [
-                    Icon(
-                      Icons.phone_android,
-                      color: Color(0xFF5B9FD8),
-                      size: 20,
-                    ),
-                    Gap(8),
-                    Text('Phone Number'),
-                  ],
-                ),
-              ),
-
-              const Gap(40),
-
-              // Create Account
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Text(
-                    'New to Rain Check?  ',
-                    style: TextStyle(color: Color(0xFF8B94A8), fontSize: 14),
-                  ),
-                  TextButton(
-                    onPressed: () {},
-                    style: TextButton.styleFrom(
-                      padding: EdgeInsets.zero,
-                      minimumSize: Size.zero,
-                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                    ),
-                    child: const Text(
-                      'Create Account',
-                      style: TextStyle(
-                        color: Color(0xFF5B9FD8),
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
+                      // Password
+                      AppTextFormField(
+                        controller: _passwordController,
+                        hintText: '••••••••',
+                        isPassword: true,
+                        isShowPassword: _isPasswordVisible,
+                        textInputAction: TextInputAction.done,
+                        validator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return 'Password is required';
+                          }
+                          if (value.length < 6) {
+                            return 'Password must be at least 6 characters';
+                          }
+                          return null;
+                        },
+                        onPressed: (value) {
+                          setState(() {
+                            _isPasswordVisible = value;
+                          });
+                        },
                       ),
-                    ),
-                  ),
-                ],
-              ),
 
-              const Gap(40),
-            ],
-          ),
+                      const Gap(12),
+
+                      // Forgot password
+                      Align(
+                        alignment: Alignment.centerRight,
+                        child: TextButton(
+                          onPressed: () {},
+                          child: const Text(
+                            'Forgot Password?',
+                            style: TextStyle(
+                              color: Color(0xFF5B9FD8),
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ),
+                      ),
+
+                      const Gap(24),
+
+                      // Sign in
+                      AppElevatedButton(
+                        text: 'Sign In',
+                        // TODO: implement Sign In with email and password
+                        onPressed: () {
+                          context.router.push(const MainAppRoute());
+                        },
+                      ),
+
+                      const Gap(32),
+
+                      // Divider
+                      Row(
+                        children: const [
+                          Expanded(child: Divider(color: Color(0xFFE1E5EB))),
+                          Padding(
+                            padding: EdgeInsets.symmetric(horizontal: 16),
+                            child: Text(
+                              'OR',
+                              style: TextStyle(
+                                color: Color(0xFF8B94A8),
+                                fontSize: 12,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ),
+                          Expanded(child: Divider(color: Color(0xFFE1E5EB))),
+                        ],
+                      ),
+
+                      const Gap(32),
+
+                      // Google
+                      AppElevatedButton(
+                        text: 'Google Sign In',
+                        // TODO: implement Google Sign In
+                        onPressed: () {},
+                      ),
+
+                      const Gap(16),
+
+                      // Phone
+                      AppElevatedButton(
+                        text: 'Continue with Phone',
+                        // TODO: implement Phone Sign In
+                        onPressed: () {},
+                      ),
+
+                      const Gap(32),
+
+                      // Create account
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const Text(
+                            'New to Rain Check? ',
+                            style: TextStyle(color: Color(0xFF8B94A8)),
+                          ),
+                          TextButton(
+                            onPressed: () {},
+                            child: const Text(
+                              'Create Account',
+                              style: TextStyle(
+                                color: Color(0xFF5B9FD8),
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            );
+          },
         ),
       ),
     );
