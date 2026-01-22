@@ -10,5 +10,5 @@ void main() async {
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
 
   await GoogleSignIn.instance.initialize();
-  runApp(const MainApp());
+  runApp(MainApp(googleSignIn: GoogleSignIn.instance));
 }

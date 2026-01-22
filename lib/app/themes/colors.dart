@@ -2,12 +2,16 @@ import 'package:flutter/material.dart';
 
 class AppColors {
   AppColors._(); // prevents instantiation
-  static const Color primary = Color(0xFF3F51B5);
-  static const Color secondary = Color.fromARGB(255, 114, 140, 255);
-  static const Color lightBlueBackground = Color(0xFFEAF0FA);
+
+  static const Color primary = Color(0xFF49c2f9); // #4A90E2 49c2f9
+  static const Color secondary = Color(0xFF7DD3FC); // #7DD3FC
+  static const Color background = Color(0xFFF0F9FF); // #f0f9ff
+  static const Color secondaryBackground = Color(0xFFF0F9FF); // #F0F9FF
   static const Color textWhite = Colors.white;
-  static const Color textGrey = Colors.grey;
+  static const Color textGrey = Colors.blueGrey;
+  static const Color textBlack = Colors.black;
   static const Color error = Colors.red;
+
   // Flood risk colors
   static const Color highRiskRed = Color(0xFFD32F2F); // Red
   static const Color moderateRiskYellow = Color(0xFFFBC02D); // Yellow
