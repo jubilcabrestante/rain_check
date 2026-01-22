@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:rain_check/app/themes/colors.dart';
-import 'package:rain_check/gen/fonts.gen.dart';
 
 class AppTheme {
   AppTheme._(); // private constructor
@@ -48,18 +47,11 @@ class AppTheme {
     // Elevated Buttons
     elevatedButtonTheme: ElevatedButtonThemeData(
       style: ButtonStyle(
-        backgroundColor: WidgetStateProperty.resolveWith((states) {
-          if (states.contains(WidgetState.disabled)) {
-            return AppColors.secondaryBackground;
-          }
-          return AppColors.primary;
-        }),
-        foregroundColor: const WidgetStatePropertyAll(AppColors.textBlack),
         textStyle: const WidgetStatePropertyAll(
           TextStyle(
             fontFamily: FontFamily.plusJakartaSans,
-            fontWeight: FontWeight.w500,
-            fontSize: 15,
+            fontWeight: FontWeight.w200,
+            fontSize: 16,
           ),
         ),
         shape: WidgetStatePropertyAll(
@@ -99,6 +91,8 @@ class AppTheme {
 
     // Inputs
     inputDecorationTheme: InputDecorationTheme(
+      filled: true,
+      fillColor: AppColors.textWhite,
       hintStyle: const TextStyle(
         fontFamily: FontFamily.plusJakartaSans,
         fontSize: 14,
@@ -116,17 +110,26 @@ class AppTheme {
         fontWeight: FontWeight.w500,
         color: AppColors.primary,
       ),
+
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(16),
         borderSide: const BorderSide(color: AppColors.secondaryBackground),
       ),
+
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(16),
         borderSide: const BorderSide(color: AppColors.primary),
       ),
+
       errorBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(16),
         borderSide: const BorderSide(color: AppColors.highRiskRed),
+      ),
+
+      // ✅ THIS IS THE MISSING PIECE
+      focusedErrorBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(16),
+        borderSide: const BorderSide(color: AppColors.highRiskRed, width: 1.5),
       ),
     ),
 

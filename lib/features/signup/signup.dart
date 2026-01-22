@@ -1,5 +1,13 @@
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
+import 'package:gap/gap.dart';
+import 'package:rain_check/app/themes/colors.dart';
+import 'package:rain_check/core/shared/app_custom_button.dart';
+import 'package:rain_check/core/shared/app_custom_label.dart';
+import 'package:rain_check/core/shared/app_custom_textfield.dart';
+import 'package:rain_check/core/utils/keyboard_dismisser.dart';
+import 'package:rain_check/core/utils/validators.dart';
+import 'package:rain_check/features/login/login.dart';
 
 @RoutePage()
 class SignupScreen extends StatefulWidget {
@@ -10,8 +18,165 @@ class SignupScreen extends StatefulWidget {
 }
 
 class _SignupScreenState extends State<SignupScreen> {
+  final _formKey = GlobalKey<FormState>();
+  List<TextEditingController> _textControllers = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _textControllers = List.generate(4, (index) => TextEditingController());
+    // _textControllers[0].addListener(_validateEmail);
+  }
+
   @override
   Widget build(BuildContext context) {
-    return const Placeholder();
+    final textTheme = Theme.of(context).textTheme;
+
+    return Scaffold(
+      body: SafeArea(
+        child: KeyboardDismisser(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
+            child: Form(
+              key: _formKey,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  HeaderTitle(
+                    title: 'Join Rain Check',
+                    subtitle:
+                        'Stay ahead of the weather and plan your day with confidence.',
+                  ),
+
+                  const Gap(16),
+
+                  const Label(label: "Full Name"),
+                  const Gap(8),
+                  AppCustomTextField(
+                    controller: _textControllers[0],
+                    textInputAction: TextInputAction.next,
+                    hintText: 'Enter your name',
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Please enter your name';
+                      }
+                      return null;
+                    },
+                  ),
+
+                  const Gap(16),
+
+                  const Label(label: "Email"),
+                  const Gap(8),
+                  AppCustomTextField(
+                    textInputAction: TextInputAction.next,
+                    controller: _textControllers[1],
+                    hintText: 'Enter your email',
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Please enter your email';
+                      }
+                      if (!EmailValidator.isValidEmail(value)) {
+                        return 'Please enter a valid email';
+                      }
+                      return null;
+                    },
+                  ),
+
+                  const Gap(16),
+
+                  const Label(label: "Password"),
+                  const Gap(8),
+                  AppCustomTextField(
+                    textInputAction: TextInputAction.next,
+                    controller: _textControllers[2],
+                    hintText: 'Enter your password',
+                    isPassword: true,
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Please enter your password';
+                      }
+                      if (value.length < 6) {
+                        return 'Password must be at least 6 characters';
+                      }
+                      return null;
+                    },
+                  ),
+
+                  const Gap(16),
+
+                  const Label(label: "Confirm Password"),
+                  const Gap(8),
+                  AppCustomTextField(
+                    textInputAction: TextInputAction.done,
+                    controller: _textControllers[3],
+                    hintText: 'Confirm your password',
+                    isPassword: true,
+                    validator: (value) {
+                      if (value != _textControllers[2].text) {
+                        return 'Passwords do not match';
+                      }
+                      return null;
+                    },
+                  ),
+                  Gap(32),
+                  AppElevatedButton(
+                    text: "Create Account",
+                    textStyle: textTheme.bodyMedium?.copyWith(
+                      color: AppColors.textWhite,
+                      fontWeight: FontWeight.w700,
+                    ),
+                    color: AppColors.primary,
+                    onPressed: () {
+                      if (_formKey.currentState!.validate()) {
+                        // Process data.
+                      }
+                    },
+                  ),
+
+                  Gap(16),
+                  const Text(
+                    'BY CONTINUING, YOU AGREE TO OUR TERMS OF SERVICE AND PRIVACY POLICY.',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w400,
+                      color: AppColors.textGrey,
+                    ),
+                  ),
+                  Gap(24),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Text(
+                        'Already have an account? ',
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w400,
+                          color: AppColors.textGrey,
+                        ),
+                      ),
+                      GestureDetector(
+                        onTap: () {
+                          context.router.pop();
+                        },
+                        child: const Text(
+                          'Login',
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                            color: AppColors.primary,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
   }
 }

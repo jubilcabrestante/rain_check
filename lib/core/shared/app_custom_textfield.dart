@@ -1,67 +1,60 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:rain_check/app/themes/colors.dart';
 
-class AppCustomTextField extends StatefulWidget {
-  final TextEditingController controller;
+class AppCustomTextField extends StatelessWidget {
+  final bool? isPassword;
+  final bool? isShowPassword;
+  final TextInputType? keyboardType;
+  final TextInputAction? textInputAction;
+  final Function(bool)? onPressed;
+  final TextEditingController? controller;
+  final String? Function(String?)? validator;
   final String hintText;
-  final bool isPassword;
-  final Widget? prefixIcon;
-  final ValueChanged<String>? onChanged;
-  final TextInputType keyboardType;
+  final List<TextInputFormatter>? inputFormatters;
+  final void Function(String)? onChanged;
   const AppCustomTextField({
     super.key,
-    required this.controller,
+    this.controller,
+    this.validator,
     required this.hintText,
     this.isPassword = false,
-    this.prefixIcon,
+    this.isShowPassword = false,
+    this.onPressed,
+    this.keyboardType,
+    this.textInputAction,
+    this.inputFormatters,
     this.onChanged,
-    this.keyboardType = TextInputType.text,
   });
 
   @override
-  State<AppCustomTextField> createState() => _AppCustomTextFieldState();
-}
-
-class _AppCustomTextFieldState extends State<AppCustomTextField> {
-  late bool _obscureText;
-
-  @override
-  void initState() {
-    super.initState();
-    _obscureText = widget.isPassword;
-  }
-
-  @override
   Widget build(BuildContext context) {
+    var theme = Theme.of(context).textTheme;
+    var style = theme.bodyMedium;
     return TextFormField(
-      controller: widget.controller,
-      keyboardType: widget.keyboardType,
-      obscureText: _obscureText,
-      onChanged: widget.onChanged,
+      onChanged: onChanged,
+      textInputAction: textInputAction,
+      keyboardType: keyboardType,
+      obscureText: isPassword! && !(isShowPassword ?? false),
+      controller: controller,
+      autovalidateMode: AutovalidateMode.onUserInteraction,
       decoration: InputDecoration(
-        filled: true,
-        fillColor: AppColors.textWhite,
-        hintText: widget.hintText,
-        hintStyle: const TextStyle(color: AppColors.textGrey, fontSize: 14),
-        contentPadding: const EdgeInsets.symmetric(
-          vertical: 18,
-          horizontal: 16,
-        ),
-        prefixIcon: widget.prefixIcon,
-        suffixIcon: widget.isPassword
+        hintText: hintText,
+        suffixIcon: isPassword!
             ? IconButton(
+                onPressed: () {
+                  onPressed?.call(!isShowPassword!);
+                },
                 icon: Icon(
-                  _obscureText ? Icons.visibility_off : Icons.visibility,
-                  color: AppColors.textGrey,
+                  isShowPassword! ? Icons.visibility : Icons.visibility_off,
                 ),
-                onPressed: () => setState(() => _obscureText = !_obscureText),
               )
             : null,
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(21),
-          borderSide: BorderSide.none,
-        ),
       ),
+      style: style,
+      cursorColor: AppColors.primary,
+      validator: validator,
+      inputFormatters: inputFormatters,
     );
   }
 }
