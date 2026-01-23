@@ -425,7 +425,7 @@ packages:
     source: hosted
     version: "3.2.4"
   freezed_annotation:
-    dependency: transitive
+    dependency: "direct main"
     description:
       name: freezed_annotation
       sha256: "7294967ff0a6d98638e7acb774aac3af2550777accd8149c90af5b014e6d44d8"
@@ -584,6 +584,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "0.20.2"
+  intl_phone_field:
+    dependency: "direct main"
+    description:
+      name: intl_phone_field
+      sha256: "73819d3dfcb68d2c85663606f6842597c3ddf6688ac777f051b17814fe767bbf"
+      url: "https://pub.dev"
+    source: hosted
+    version: "3.2.0"
   io:
     dependency: transitive
     description:
@@ -665,7 +673,7 @@ packages:
     source: hosted
     version: "1.0.1"
   logger:
-    dependency: transitive
+    dependency: "direct main"
     description:
       name: logger
       sha256: a7967e31b703831a893bbc3c3dd11db08126fe5f369b5c648a36f821979f5be3

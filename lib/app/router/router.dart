@@ -14,6 +14,11 @@ class AppRouter extends RootStackRouter {
     AutoRoute(page: ForgotPasswordRoute.page, path: '/forgot-password'),
     AutoRoute(page: SignupRoute.page, path: '/sign-up'),
     AutoRoute(
+      page: InputNumberRoute.page,
+      path: '/input-number',
+      children: [AutoRoute(page: InputPinRoute.page, path: 'input-pin')],
+    ),
+    AutoRoute(
       page: MainAppRoute.page,
       path: '/main',
       children: [

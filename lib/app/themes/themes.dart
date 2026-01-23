@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:rain_check/app/themes/colors.dart';
+import 'package:rain_check/gen/fonts.gen.dart';
 
 class AppTheme {
   AppTheme._(); // private constructor

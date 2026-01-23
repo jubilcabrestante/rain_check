@@ -6,8 +6,8 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:rain_check/app/router/router.dart';
 import 'package:rain_check/app/themes/themes.dart';
-import 'package:rain_check/core/domain/cubit/auth_cubit.dart';
-import 'package:rain_check/core/domain/i_user_repository.dart';
+import 'package:rain_check/core/domain/cubit/auth_user_cubit.dart';
+import 'package:rain_check/core/domain/i_auth_user_repository.dart';
 import 'package:rain_check/core/repository/auth_user_repository.dart';
 import 'package:responsive_framework/responsive_framework.dart';
 
@@ -23,7 +23,7 @@ class _MainAppState extends State<MainApp> {
   final _appRouter = AppRouter();
 
   late IAuthUserRepository authUserRepository;
-  late AuthCubit _authCubit;
+  late AuthUserCubit _authUserCubit;
   late FirebaseAuth _firebaseAuth;
   late GoogleSignIn _googleSignIn;
   late FirebaseFirestore _firestore;
@@ -46,7 +46,7 @@ class _MainAppState extends State<MainApp> {
       firestore: _firestore,
     );
 
-    _authCubit = AuthCubit(authUserRepository);
+    _authUserCubit = AuthUserCubit(authUserRepository);
   }
 
   // TODO: Implement app initialization logic
@@ -60,7 +60,7 @@ class _MainAppState extends State<MainApp> {
         ),
       ],
       child: MultiBlocProvider(
-        providers: [BlocProvider<AuthCubit>.value(value: _authCubit)],
+        providers: [BlocProvider<AuthUserCubit>.value(value: _authUserCubit)],
         child: MaterialApp.router(
           theme: themeData.lightTheme,
           routerConfig: _appRouter.config(

@@ -5,7 +5,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:dartz/dartz.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
-import 'package:rain_check/core/domain/i_user_repository.dart';
+import 'package:rain_check/core/domain/i_auth_user_repository.dart';
 import 'package:rain_check/core/repository/user_model/user_vm.dart';
 import 'package:rain_check/core/utils/error_handler.dart';
 import 'package:rain_check/core/utils/typedef.dart';
