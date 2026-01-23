@@ -1,7 +1,9 @@
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:gap/gap.dart';
 import 'package:rain_check/app/themes/colors.dart';
+import 'package:rain_check/core/domain/cubit/auth_user_cubit.dart';
 import 'package:rain_check/core/shared/app_custom_button.dart';
 import 'package:rain_check/core/shared/app_custom_label.dart';
 import 'package:rain_check/core/shared/app_custom_textfield.dart';
@@ -24,12 +26,13 @@ class _SignupScreenState extends State<SignupScreen> {
   @override
   void initState() {
     super.initState();
-    _textControllers = List.generate(4, (index) => TextEditingController());
+    _textControllers = List.generate(3, (index) => TextEditingController());
     // _textControllers[0].addListener(_validateEmail);
   }
 
   @override
   Widget build(BuildContext context) {
+    final authUserCubit = context.read<AuthUserCubit>();
     final textTheme = Theme.of(context).textTheme;
 
     return Scaffold(
@@ -130,6 +133,11 @@ class _SignupScreenState extends State<SignupScreen> {
                     onPressed: () {
                       if (_formKey.currentState!.validate()) {
                         // Process data.
+                        authUserCubit.register(
+                          email: _textControllers[0].text,
+                          password: _textControllers[1].text,
+                          fullName: _textControllers[2].text,
+                        );
                       }
                     },
                   ),
