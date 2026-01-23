@@ -1,7 +1,9 @@
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:gap/gap.dart';
 import 'package:rain_check/app/router/router.gr.dart';
+import 'package:rain_check/core/domain/cubit/auth_user_cubit.dart';
 import 'package:rain_check/core/shared/app_custom_button.dart';
 import 'package:rain_check/core/shared/app_custom_label.dart';
 import 'package:rain_check/core/shared/app_custom_textfield.dart';
@@ -33,158 +35,182 @@ class _LoginScreenState extends State<LoginScreen> {
     return Scaffold(
       backgroundColor: AppColors.background,
       body: SafeArea(
-        child: KeyboardDismisser(
-          child: Center(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 400),
-                child: Form(
-                  key: _formKey,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      // Logo
-
-                      // HeaderTitle
-                      HeaderTitle(
-                        title: 'Rain Check',
-                        subtitle: 'Plan your day, the smart way',
-                      ),
-                      const Gap(24),
-
-                      // Email
-                      const Label(label: "Email"),
-                      const Gap(8),
-                      AppCustomTextField(
-                        controller: _textControllers[0],
-                        hintText: 'hello@raincheck.com',
-                        keyboardType: TextInputType.emailAddress,
-                        validator: (value) {
-                          if (value == null || value.isEmpty) {
-                            return 'Please enter your email';
-                          }
-                          if (!RegExp(r'^[^@]+@[^@]+\.[^@]+').hasMatch(value)) {
-                            return 'Please enter a valid email';
-                          }
-                          return null;
-                        },
-                      ),
-                      const Gap(16),
-
-                      // Password
-                      const Label(label: "Password"),
-                      const Gap(8),
-                      AppCustomTextField(
-                        controller: _textControllers[1],
-                        hintText: 'Enter your password',
-                        isPassword: true,
-                        validator: (value) {
-                          if (value == null || value.isEmpty) {
-                            return 'Please enter your password';
-                          }
-                          if (value.length < 6) {
-                            return 'Password must be at least 6 characters';
-                          }
-                          return null;
-                        },
-                      ),
-
-                      // Forgot password
-                      Align(
-                        alignment: Alignment.centerRight,
-                        child: TextButton(
-                          onPressed: () {
-                            context.router.push(const ForgotPasswordRoute());
-                          },
-                          child: const Text(
-                            'Forgot Password?',
-                            style: TextStyle(
-                              color: Color(0xFF5B9FD8),
-                              fontSize: 15,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                        ),
-                      ),
-                      const Gap(24),
-
-                      // Sign in
-                      AppElevatedButton(
-                        text: 'Sign In',
-                        color: AppColors.primary,
-                        textStyle: const TextStyle(
-                          color: AppColors.textWhite,
-                          fontWeight: FontWeight.w600,
-                        ),
-                        onPressed: () {
-                          context.router.push(const MainAppRoute());
-                        },
-                      ),
-                      const Gap(32),
-
-                      // Divider
-                      SignInDivider(),
-                      const Gap(32),
-
-                      // Google Sign In
-                      AppElevatedButton(
-                        text: 'Continue with Google',
-                        textStyle: const TextStyle(
-                          color: AppColors.textBlack,
-                          fontWeight: FontWeight.w600,
-                        ),
-                        color: AppColors.textWhite,
-                        icon: Image.asset(
-                          Assets.images.google.path,
-                          width: 20,
-                          height: 20,
-                        ),
-                        onPressed: () {},
-                      ),
-                      const Gap(16),
-
-                      // Phone Number
-                      AppElevatedButton(
-                        text: 'Phone Number',
-                        icon: const Icon(Icons.phone),
-                        textStyle: const TextStyle(
-                          color: AppColors.textBlack,
-                          fontWeight: FontWeight.w600,
-                        ),
-                        color: AppColors.textWhite,
-                        onPressed: () {},
-                      ),
-                      const Gap(32),
-
-                      // Create account
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
+        child: BlocConsumer<AuthUserCubit, AuthUserState>(
+          listener: (context, state) {
+            // TODO: implement listener
+          },
+          builder: (context, state) {
+            final authUserCubit = context.read<AuthUserCubit>();
+            return KeyboardDismisser(
+              child: Center(
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 24,
+                    vertical: 24,
+                  ),
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 400),
+                    child: Form(
+                      key: _formKey,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
-                          const Text(
-                            'New to Rain Check? ',
-                            style: TextStyle(color: Color(0xFF8B94A8)),
+                          // Logo
+
+                          // HeaderTitle
+                          HeaderTitle(
+                            title: 'Rain Check',
+                            subtitle: 'Plan your day, the smart way',
                           ),
-                          TextButton(
-                            onPressed: () {
-                              context.router.push(const SignupRoute());
+                          const Gap(24),
+
+                          // Email
+                          const Label(label: "Email"),
+                          const Gap(8),
+                          AppCustomTextField(
+                            controller: _textControllers[0],
+                            hintText: 'hello@raincheck.com',
+                            keyboardType: TextInputType.emailAddress,
+                            validator: (value) {
+                              if (value == null || value.isEmpty) {
+                                return 'Please enter your email';
+                              }
+                              if (!RegExp(
+                                r'^[^@]+@[^@]+\.[^@]+',
+                              ).hasMatch(value)) {
+                                return 'Please enter a valid email';
+                              }
+                              return null;
                             },
-                            child: const Text(
-                              'Create Account',
-                              style: TextStyle(
-                                color: Color(0xFF5B9FD8),
-                                fontWeight: FontWeight.w600,
+                          ),
+                          const Gap(16),
+
+                          // Password
+                          const Label(label: "Password"),
+                          const Gap(8),
+                          AppCustomTextField(
+                            controller: _textControllers[1],
+                            hintText: 'Enter your password',
+                            isPassword: true,
+                            validator: (value) {
+                              if (value == null || value.isEmpty) {
+                                return 'Please enter your password';
+                              }
+                              if (value.length < 6) {
+                                return 'Password must be at least 6 characters';
+                              }
+                              return null;
+                            },
+                          ),
+
+                          // Forgot password
+                          Align(
+                            alignment: Alignment.centerRight,
+                            child: TextButton(
+                              onPressed: () {
+                                context.router.push(
+                                  const ForgotPasswordRoute(),
+                                );
+                              },
+                              child: const Text(
+                                'Forgot Password?',
+                                style: TextStyle(
+                                  color: Color(0xFF5B9FD8),
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.w500,
+                                ),
                               ),
                             ),
                           ),
+                          const Gap(24),
+
+                          // Sign in
+                          AppElevatedButton(
+                            text: 'Sign In',
+                            color: AppColors.primary,
+                            textStyle: const TextStyle(
+                              color: AppColors.textWhite,
+                              fontWeight: FontWeight.w600,
+                            ),
+                            onPressed: () {
+                              if (_formKey.currentState!.validate()) {
+                                authUserCubit.login(
+                                  email: _textControllers[0].text,
+                                  password: _textControllers[1].text,
+                                );
+                              }
+                            },
+                          ),
+                          const Gap(32),
+
+                          // Divider
+                          SignInDivider(),
+                          const Gap(32),
+
+                          // Google Sign In
+                          AppElevatedButton(
+                            text: 'Continue with Google',
+                            textStyle: const TextStyle(
+                              color: AppColors.textBlack,
+                              fontWeight: FontWeight.w600,
+                            ),
+                            color: AppColors.textWhite,
+                            icon: Image.asset(
+                              Assets.images.google.path,
+                              width: 20,
+                              height: 20,
+                            ),
+                            onPressed: () {
+                              authUserCubit.signInWithGoogle();
+                            },
+                          ),
+                          const Gap(16),
+
+                          // Phone Number
+                          AppElevatedButton(
+                            text: 'Phone Number',
+                            icon: const Icon(Icons.phone),
+                            textStyle: const TextStyle(
+                              color: AppColors.textBlack,
+                              fontWeight: FontWeight.w600,
+                            ),
+                            color: AppColors.textWhite,
+                            onPressed: () {
+                              context.router.push(InputNumberRoute());
+                            },
+                          ),
+                          const Gap(32),
+
+                          // Create account
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              const Text(
+                                'New to Rain Check? ',
+                                style: TextStyle(color: Color(0xFF8B94A8)),
+                              ),
+                              TextButton(
+                                onPressed: () {
+                                  context.router.push(const SignupRoute());
+                                },
+                                child: const Text(
+                                  'Create Account',
+                                  style: TextStyle(
+                                    color: Color(0xFF5B9FD8),
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
                         ],
                       ),
-                    ],
+                    ),
                   ),
                 ),
               ),
-            ),
-          ),
+            );
+          },
         ),
       ),
     );

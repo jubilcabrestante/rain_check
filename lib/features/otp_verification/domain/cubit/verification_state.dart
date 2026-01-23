@@ -6,7 +6,8 @@ enum VerificationStatus {
   loading,
   otpSent,
   verifying,
-  verified,
+  verifiedNewUser, // User verified but profile doesn't exist
+  verifiedExistingUser, // User verified and profile exists
   phoneLinked,
   error,
 }
@@ -17,5 +18,7 @@ abstract class VerificationState with _$VerificationState {
     @Default(VerificationStatus.idle) VerificationStatus status,
     String? verificationId,
     String? errorMessage,
+    @Default(false) bool userExists,
+    UserVM? currentUser,
   }) = _VerificationState;
 }

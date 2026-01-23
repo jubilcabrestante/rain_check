@@ -3,7 +3,7 @@ import 'dart:async';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:rain_check/core/domain/i_auth_user_repository.dart';
-import 'package:rain_check/core/enum/enum_password_type.dart';
+import 'package:rain_check/core/repository/user_model/user_vm.dart';
 
 part 'verification_state.dart';
 part 'verification_cubit.freezed.dart';
@@ -12,22 +12,29 @@ part 'verification_cubit.freezed.dart';
 class VerificationCubit extends Cubit<VerificationState> {
   final IAuthUserRepository _repository;
   final String phoneNumber;
-  final AuthMode authMode;
 
   VerificationCubit({
     required IAuthUserRepository repository,
     required this.phoneNumber,
-    required this.authMode,
   }) : _repository = repository,
-       super(const VerificationState());
+       super(const VerificationState()) {
+    _initialize();
+  }
+
+  /// Initialize by sending OTP
+  Future<void> _initialize() async {
+    if (phoneNumber.isNotEmpty) {
+      await sendOTP(phoneNumber);
+    }
+  }
 
   /// Send OTP to phone number
-  Future<void> sendOTP(String phoneNumber) async {
+  Future<void> sendOTP(String phone) async {
     emit(
       state.copyWith(status: VerificationStatus.loading, errorMessage: null),
     );
 
-    final result = await _repository.sendOTP(phoneNumber);
+    final result = await _repository.sendOTP(phone);
 
     result.fold(
       (failure) => emit(
@@ -57,13 +64,13 @@ class VerificationCubit extends Cubit<VerificationState> {
     );
   }
 
-  /// Verify the entered OTP code
+  /// Verify the entered OTP code and check if user exists
   Future<void> verifyOTP(String otpCode) async {
-    if (otpCode.length != 4) {
+    if (otpCode.length != 6) {
       emit(
         state.copyWith(
           status: VerificationStatus.error,
-          errorMessage: 'Please enter a valid 4-digit code',
+          errorMessage: 'Please enter a valid 6-digit code',
         ),
       );
       return;
@@ -84,27 +91,54 @@ class VerificationCubit extends Cubit<VerificationState> {
       state.copyWith(status: VerificationStatus.verifying, errorMessage: null),
     );
 
-    final result = await _repository.verifyOTP(verificationId, otpCode);
+    // Step 1: Verify the OTP
+    final verifyResult = await _repository.verifyOTP(verificationId, otpCode);
 
-    result.fold(
-      (failure) => emit(
-        state.copyWith(
-          status: VerificationStatus.error,
-          errorMessage: failure.errorMesage ?? 'Invalid OTP code',
-        ),
-      ),
-      (_) {
+    await verifyResult.fold(
+      (failure) async {
         emit(
           state.copyWith(
-            status: VerificationStatus.verified,
-            errorMessage: null,
+            status: VerificationStatus.error,
+            errorMessage: failure.errorMesage ?? 'Invalid OTP code',
           ),
         );
+      },
+      (_) async {
+        // Step 2: Check if user exists in Firestore
+        final authUser = await _repository.authStream().first;
+        final currentUserId = authUser?.uid;
 
-        // Emit success event that UI can listen to
-        Future.delayed(const Duration(milliseconds: 100), () {
-          emit(state.copyWith(status: VerificationStatus.idle));
-        });
+        if (currentUserId == null) {
+          emit(
+            state.copyWith(
+              status: VerificationStatus.error,
+              errorMessage: 'Authentication failed. Please try again.',
+            ),
+          );
+          return;
+        }
+
+        final userResult = await _repository.getUserDetails(currentUserId);
+
+        userResult.fold(
+          // User not found - need to create profile
+          (failure) => emit(
+            state.copyWith(
+              status: VerificationStatus.verifiedNewUser,
+              userExists: false,
+              errorMessage: null,
+            ),
+          ),
+          // User exists - can proceed to app
+          (user) => emit(
+            state.copyWith(
+              status: VerificationStatus.verifiedExistingUser,
+              userExists: true,
+              currentUser: user,
+              errorMessage: null,
+            ),
+          ),
+        );
       },
     );
   }
