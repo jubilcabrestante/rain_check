@@ -51,8 +51,8 @@ class AppTheme {
         textStyle: const WidgetStatePropertyAll(
           TextStyle(
             fontFamily: FontFamily.plusJakartaSans,
-            fontWeight: FontWeight.w200,
-            fontSize: 16,
+            fontWeight: FontWeight.w600,
+            fontSize: 14,
           ),
         ),
         shape: WidgetStatePropertyAll(
@@ -71,8 +71,8 @@ class AppTheme {
         textStyle: const WidgetStatePropertyAll(
           TextStyle(
             fontFamily: FontFamily.plusJakartaSans,
-            fontWeight: FontWeight.w500,
-            fontSize: 16,
+            fontWeight: FontWeight.w600,
+            fontSize: 14,
           ),
         ),
       ),
@@ -94,6 +94,7 @@ class AppTheme {
     inputDecorationTheme: InputDecorationTheme(
       filled: true,
       fillColor: AppColors.textWhite,
+
       hintStyle: const TextStyle(
         fontFamily: FontFamily.plusJakartaSans,
         fontSize: 14,
@@ -174,7 +175,10 @@ class AppTheme {
     iconTheme: const IconThemeData(color: AppColors.primary),
   );
 
-  // DARK THEME
+  //  --------------
+  //  DARK THEME
+  //  --------------
+
   ThemeData get darkTheme => ThemeData(
     useMaterial3: true,
     brightness: Brightness.dark,

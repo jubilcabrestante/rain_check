@@ -100,6 +100,7 @@ class InputPinRoute extends _i11.PageRouteInfo<InputPinRouteArgs> {
   }) : super(
          InputPinRoute.name,
          args: InputPinRouteArgs(key: key, phoneNumber: phoneNumber),
+         rawPathParams: {'phoneNumber': phoneNumber},
          initialChildren: children,
        );
 
@@ -108,7 +109,11 @@ class InputPinRoute extends _i11.PageRouteInfo<InputPinRouteArgs> {
   static _i11.PageInfo page = _i11.PageInfo(
     name,
     builder: (data) {
-      final args = data.argsAs<InputPinRouteArgs>();
+      final pathParams = data.inheritedPathParams;
+      final args = data.argsAs<InputPinRouteArgs>(
+        orElse: () =>
+            InputPinRouteArgs(phoneNumber: pathParams.getString('phoneNumber')),
+      );
       return _i5.InputPinScreen(key: args.key, phoneNumber: args.phoneNumber);
     },
   );

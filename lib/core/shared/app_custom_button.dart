@@ -9,7 +9,7 @@ class AppElevatedButton extends StatelessWidget {
   final Color? color; // background color
   final double borderRadius;
   final Widget? icon;
-  final TextStyle? textStyle;
+  final Color? textColor;
 
   const AppElevatedButton({
     super.key,
@@ -20,18 +20,11 @@ class AppElevatedButton extends StatelessWidget {
     this.borderRadius = 16,
     this.width,
     this.icon,
-    this.textStyle,
+    this.textColor,
   });
 
   @override
   Widget build(BuildContext context) {
-    // fallback text color: if caller didn't provide one, assume white for primary BG
-    final Color? resolvedTextColor =
-        textStyle?.color ??
-        (color == null
-            ? null
-            : (color == AppColors.primary ? AppColors.textWhite : null));
-
     return IgnorePointer(
       ignoring: isLoading,
       child: SizedBox(
@@ -40,16 +33,11 @@ class AppElevatedButton extends StatelessWidget {
         child: ElevatedButton(
           onPressed: onPressed,
           style: ButtonStyle(
-            backgroundColor: MaterialStatePropertyAll(
-              color ?? AppColors.primary,
+            backgroundColor: WidgetStatePropertyAll(color ?? AppColors.primary),
+            foregroundColor: WidgetStatePropertyAll(
+              textColor ?? AppColors.textWhite,
             ),
-            foregroundColor: resolvedTextColor != null
-                ? MaterialStatePropertyAll(resolvedTextColor)
-                : null,
-            textStyle: textStyle != null
-                ? MaterialStatePropertyAll(textStyle)
-                : null,
-            shape: MaterialStatePropertyAll(
+            shape: WidgetStatePropertyAll(
               RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(borderRadius),
               ),
@@ -61,30 +49,21 @@ class AppElevatedButton extends StatelessWidget {
                     height: 25,
                     width: 25,
                     child: CircularProgressIndicator(
-                      color: resolvedTextColor ?? AppColors.secondary,
+                      color: textColor ?? AppColors.textWhite,
                     ),
                   ),
                 )
-              : (icon != null
-                    ? Row(
-                        mainAxisSize: MainAxisSize.min,
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          // if the icon is an Icon() without color, it will inherit foregroundColor.
-                          icon!,
-                          const SizedBox(width: 8),
-                          Text(
-                            text,
-                            style:
-                                textStyle ??
-                                TextStyle(color: resolvedTextColor),
-                          ),
-                        ],
-                      )
-                    : Text(
-                        text,
-                        style: textStyle ?? TextStyle(color: resolvedTextColor),
-                      )),
+              : Row(
+                  mainAxisSize: MainAxisSize.min,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    if (icon != null) ...[icon!, const SizedBox(width: 8)],
+                    Text(
+                      text,
+                      style: TextStyle(color: textColor ?? AppColors.textWhite),
+                    ),
+                  ],
+                ),
         ),
       ),
     );

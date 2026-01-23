@@ -7,10 +7,8 @@ enum AuthStatus {
   authenticated,
   unauthenticated,
   error,
+  success,
   passwordResetSent,
-  otpSent,
-  otpVerified,
-  phoneLinked,
 }
 
 @freezed

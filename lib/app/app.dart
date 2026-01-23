@@ -9,6 +9,7 @@ import 'package:rain_check/app/themes/themes.dart';
 import 'package:rain_check/core/domain/cubit/auth_user_cubit.dart';
 import 'package:rain_check/core/domain/i_auth_user_repository.dart';
 import 'package:rain_check/core/repository/auth_user_repository.dart';
+import 'package:rain_check/features/otp_verification/domain/cubit/verification_cubit.dart';
 import 'package:responsive_framework/responsive_framework.dart';
 
 class MainApp extends StatefulWidget {
@@ -27,6 +28,7 @@ class _MainAppState extends State<MainApp> {
   late FirebaseAuth _firebaseAuth;
   late GoogleSignIn _googleSignIn;
   late FirebaseFirestore _firestore;
+  late VerificationCubit _verificationCubit;
 
   @override
   void initState() {
@@ -47,6 +49,10 @@ class _MainAppState extends State<MainApp> {
     );
 
     _authUserCubit = AuthUserCubit(authUserRepository);
+    _verificationCubit = VerificationCubit(
+      iAuthUserRepository: authUserRepository,
+      authUserCubit: _authUserCubit,
+    );
   }
 
   // TODO: Implement app initialization logic
@@ -60,7 +66,10 @@ class _MainAppState extends State<MainApp> {
         ),
       ],
       child: MultiBlocProvider(
-        providers: [BlocProvider<AuthUserCubit>.value(value: _authUserCubit)],
+        providers: [
+          BlocProvider<AuthUserCubit>.value(value: _authUserCubit),
+          BlocProvider<VerificationCubit>.value(value: _verificationCubit),
+        ],
         child: MaterialApp.router(
           theme: themeData.lightTheme,
           routerConfig: _appRouter.config(

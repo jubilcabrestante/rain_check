@@ -5,6 +5,7 @@ import 'package:flutter_icon_snackbar/flutter_icon_snackbar.dart';
 import 'package:gap/gap.dart';
 import 'package:intl_phone_field/intl_phone_field.dart';
 import 'package:rain_check/app/router/router.gr.dart';
+import 'package:rain_check/app/themes/colors.dart';
 import 'package:rain_check/core/shared/app_custom_button.dart';
 import 'package:rain_check/core/utils/keyboard_dismisser.dart';
 import 'package:rain_check/core/utils/snack_bar.dart';
@@ -45,8 +46,10 @@ class _InputNumberScreenState extends State<InputNumberScreen> {
     var theme = Theme.of(context);
     return Scaffold(
       appBar: AppBar(
+        toolbarHeight: 40,
+        backgroundColor: AppColors.background,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
+          icon: const Icon(Icons.arrow_back, color: AppColors.primary),
           onPressed: () {
             Navigator.pop(context);
           },
@@ -80,65 +83,67 @@ class _InputNumberScreenState extends State<InputNumberScreen> {
           },
           builder: (context, state) {
             return KeyboardDismisser(
-              child: ListView(
-                children: [
-                  Gap(32),
-                  HeaderTitle(
-                    title: "Verify your Phone",
-                    subtitle:
-                        "Please enter your details to receive a secure one time pin",
-                  ),
-                  Gap(24),
-                  // Phone Number Input Field
-                  IntlPhoneField(
-                    autofocus: true,
-                    focusNode: focusNode,
-                    decoration: InputDecoration(
-                      hintStyle: theme.textTheme.bodyMedium,
-                      labelText: 'Phone Number',
-                      helperStyle: theme.textTheme.bodyMedium,
-                      suffixStyle: theme.textTheme.bodyMedium,
-                      labelStyle: theme.textTheme.bodyMedium,
-                      floatingLabelStyle: theme.textTheme.bodyMedium,
-                      border: const OutlineInputBorder(
-                        borderSide: BorderSide(),
-                        borderRadius: BorderRadius.all(Radius.circular(16)),
-                      ),
+              child: Padding(
+                padding: const EdgeInsets.all(24.0),
+                child: ListView(
+                  children: [
+                    HeaderTitle(
+                      title: "Verify your Phone",
+                      subtitle:
+                          "Please enter your details to receive a secure one time pin",
                     ),
-                    initialCountryCode: 'PH',
-                    onChanged: (phone) {
-                      var bool = phone.completeNumber.length < 13;
-                      if (phone.completeNumber.length == 13) {
-                        focusNode.unfocus();
-                        return setState(() {
-                          allowToContinue = true;
-                          mobileNumber = phone.completeNumber;
-                        });
-                      }
+                    Gap(24),
+                    // Phone Number Input Field
+                    IntlPhoneField(
+                      autofocus: true,
+                      focusNode: focusNode,
+                      decoration: InputDecoration(
+                        hintStyle: theme.textTheme.bodyMedium,
+                        labelText: 'Phone Number',
+                        helperStyle: theme.textTheme.bodyMedium,
+                        suffixStyle: theme.textTheme.bodyMedium,
+                        labelStyle: theme.textTheme.bodyMedium,
+                        floatingLabelStyle: theme.textTheme.bodyMedium,
+                        border: const OutlineInputBorder(
+                          borderSide: BorderSide(),
+                          borderRadius: BorderRadius.all(Radius.circular(16)),
+                        ),
+                      ),
+                      initialCountryCode: 'PH',
+                      onChanged: (phone) {
+                        var bool = phone.completeNumber.length < 13;
+                        if (phone.completeNumber.length == 13) {
+                          focusNode.unfocus();
+                          return setState(() {
+                            allowToContinue = true;
+                            mobileNumber = phone.completeNumber;
+                          });
+                        }
 
-                      if (bool && allowToContinue) {
-                        setState(() {
-                          allowToContinue = false;
-                        });
-                      }
-                    },
-                  ),
-                  Visibility(
-                    visible: allowToContinue,
-                    child: SizedBox(
-                      width: double.infinity,
-                      child: AppElevatedButton(
-                        onPressed: () {
-                          context.read<VerificationCubit>().sendOTP(
-                            mobileNumber,
-                          );
-                        },
-                        text: "CONTINUE",
-                        isLoading: state.status == VerificationStatus.loading,
+                        if (bool && allowToContinue) {
+                          setState(() {
+                            allowToContinue = false;
+                          });
+                        }
+                      },
+                    ),
+                    Visibility(
+                      visible: allowToContinue,
+                      child: SizedBox(
+                        width: double.infinity,
+                        child: AppElevatedButton(
+                          onPressed: () {
+                            context.read<VerificationCubit>().sendOTP(
+                              mobileNumber,
+                            );
+                          },
+                          text: "CONTINUE",
+                          isLoading: state.status == VerificationStatus.loading,
+                        ),
                       ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             );
           },

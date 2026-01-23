@@ -38,6 +38,7 @@ class _LoginScreenState extends State<LoginScreen> {
         child: BlocConsumer<AuthUserCubit, AuthUserState>(
           listener: (context, state) {
             // TODO: implement listener
+            //
           },
           builder: (context, state) {
             final authUserCubit = context.read<AuthUserCubit>();
@@ -114,11 +115,7 @@ class _LoginScreenState extends State<LoginScreen> {
                               },
                               child: const Text(
                                 'Forgot Password?',
-                                style: TextStyle(
-                                  color: Color(0xFF5B9FD8),
-                                  fontSize: 15,
-                                  fontWeight: FontWeight.w500,
-                                ),
+                                style: TextStyle(color: Color(0xFF5B9FD8)),
                               ),
                             ),
                           ),
@@ -128,16 +125,15 @@ class _LoginScreenState extends State<LoginScreen> {
                           AppElevatedButton(
                             text: 'Sign In',
                             color: AppColors.primary,
-                            textStyle: const TextStyle(
-                              color: AppColors.textWhite,
-                              fontWeight: FontWeight.w600,
-                            ),
+                            textColor: AppColors.textWhite,
+                            isLoading: state.status == AuthStatus.loading,
                             onPressed: () {
                               if (_formKey.currentState!.validate()) {
                                 authUserCubit.login(
                                   email: _textControllers[0].text,
                                   password: _textControllers[1].text,
                                 );
+                                context.router.replaceAll([MainAppRoute()]);
                               }
                             },
                           ),
@@ -150,10 +146,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           // Google Sign In
                           AppElevatedButton(
                             text: 'Continue with Google',
-                            textStyle: const TextStyle(
-                              color: AppColors.textBlack,
-                              fontWeight: FontWeight.w600,
-                            ),
+                            textColor: AppColors.textBlack,
                             color: AppColors.textWhite,
                             icon: Image.asset(
                               Assets.images.google.path,
@@ -170,10 +163,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           AppElevatedButton(
                             text: 'Phone Number',
                             icon: const Icon(Icons.phone),
-                            textStyle: const TextStyle(
-                              color: AppColors.textBlack,
-                              fontWeight: FontWeight.w600,
-                            ),
+                            textColor: AppColors.textBlack,
                             color: AppColors.textWhite,
                             onPressed: () {
                               context.router.push(InputNumberRoute());
@@ -249,12 +239,12 @@ class _HeaderTitleState extends State<HeaderTitle> {
             // 'Rain Check',
             widget.title,
             style: textTheme.titleLarge?.copyWith(
-              fontSize: 28,
+              fontSize: 24,
               fontWeight: FontWeight.bold,
               color: AppColors.textBlack,
             ),
           ),
-          const Gap(4),
+          const Gap(8),
           Text(
             // 'Elevate your daily planning',
             widget.subtitle,

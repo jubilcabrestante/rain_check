@@ -134,10 +134,7 @@ class AuthUserCubit extends Cubit<AuthUserState> {
             ),
           ),
           (userVM) => emit(
-            state.copyWith(
-              status: AuthStatus.authenticated,
-              currentUser: userVM,
-            ),
+            state.copyWith(status: AuthStatus.success, currentUser: userVM),
           ),
         );
       },
@@ -160,65 +157,6 @@ class AuthUserCubit extends Cubit<AuthUserState> {
           message: 'Password reset email sent. Please check your inbox.',
         ),
       ),
-    );
-  }
-
-  /// Send OTP to phone number
-  Future<void> sendOTP(String phoneNumber) async {
-    emit(state.copyWith(status: AuthStatus.loading, message: null));
-
-    final result = await _repository.sendOTP(phoneNumber);
-
-    result.fold(
-      (failure) => emit(
-        state.copyWith(status: AuthStatus.error, message: failure.errorMesage),
-      ),
-      (verificationId) {
-        if (verificationId != null) {
-          emit(
-            state.copyWith(
-              status: AuthStatus.otpSent,
-              verificationId: verificationId,
-              message: 'OTP sent successfully',
-            ),
-          );
-        } else {
-          emit(
-            state.copyWith(
-              status: AuthStatus.phoneLinked,
-              message: 'Phone number linked successfully',
-            ),
-          );
-        }
-      },
-    );
-  }
-
-  /// Verify OTP code
-  Future<void> verifyOTP({
-    required String verificationId,
-    required String smsCode,
-  }) async {
-    emit(state.copyWith(status: AuthStatus.loading, message: null));
-
-    final result = await _repository.verifyOTP(verificationId, smsCode);
-
-    result.fold(
-      (failure) => emit(
-        state.copyWith(status: AuthStatus.error, message: failure.errorMesage),
-      ),
-      (_) async {
-        // Update user document with phone number
-        final currentUser = state.currentUser;
-        if (currentUser != null) {
-          emit(
-            state.copyWith(
-              status: AuthStatus.otpVerified,
-              message: 'Phone number verified successfully',
-            ),
-          );
-        }
-      },
     );
   }
 

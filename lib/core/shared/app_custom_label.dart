@@ -19,7 +19,7 @@ class Label extends StatelessWidget {
             fontSize: 14,
             fontFamily: FontFamily.plusJakartaSans,
             fontWeight: fontWeight ?? FontWeight.w400, // default bold
-            letterSpacing: 1.5,
+            letterSpacing: 1,
             color: AppColors.textGrey,
           ),
     );

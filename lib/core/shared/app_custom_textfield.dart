@@ -1,26 +1,22 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:rain_check/app/themes/colors.dart';
 
-class AppCustomTextField extends StatelessWidget {
-  final bool? isPassword;
-  final bool? isShowPassword;
-  final TextInputType? keyboardType;
-  final TextInputAction? textInputAction;
-  final Function(bool)? onPressed;
+class AppCustomTextField extends StatefulWidget {
+  final bool isPassword;
   final TextEditingController? controller;
   final String? Function(String?)? validator;
   final String hintText;
+  final TextInputType? keyboardType;
+  final TextInputAction? textInputAction;
   final List<TextInputFormatter>? inputFormatters;
   final void Function(String)? onChanged;
+
   const AppCustomTextField({
     super.key,
     this.controller,
     this.validator,
     required this.hintText,
     this.isPassword = false,
-    this.isShowPassword = false,
-    this.onPressed,
     this.keyboardType,
     this.textInputAction,
     this.inputFormatters,
@@ -28,33 +24,36 @@ class AppCustomTextField extends StatelessWidget {
   });
 
   @override
+  State<AppCustomTextField> createState() => _AppCustomTextFieldState();
+}
+
+class _AppCustomTextFieldState extends State<AppCustomTextField> {
+  bool _showPassword = false;
+
+  @override
   Widget build(BuildContext context) {
-    var theme = Theme.of(context).textTheme;
-    var style = theme.bodyMedium;
     return TextFormField(
-      onChanged: onChanged,
-      textInputAction: textInputAction,
-      keyboardType: keyboardType,
-      obscureText: isPassword! && !(isShowPassword ?? false),
-      controller: controller,
-      autovalidateMode: AutovalidateMode.onUserInteraction,
+      controller: widget.controller,
+      validator: widget.validator,
+      onChanged: widget.onChanged,
+      keyboardType: widget.keyboardType,
+      textInputAction: widget.textInputAction,
+      obscureText: widget.isPassword && !_showPassword,
       decoration: InputDecoration(
-        hintText: hintText,
-        suffixIcon: isPassword!
+        hintText: widget.hintText,
+        suffixIcon: widget.isPassword
             ? IconButton(
-                onPressed: () {
-                  onPressed?.call(!isShowPassword!);
-                },
                 icon: Icon(
-                  isShowPassword! ? Icons.visibility : Icons.visibility_off,
+                  _showPassword ? Icons.visibility : Icons.visibility_off,
                 ),
+                onPressed: () {
+                  setState(() {
+                    _showPassword = !_showPassword;
+                  });
+                },
               )
             : null,
       ),
-      style: style,
-      cursorColor: AppColors.primary,
-      validator: validator,
-      inputFormatters: inputFormatters,
     );
   }
 }

@@ -129,7 +129,7 @@ class _InputPinScreenState extends State<InputPinScreen> {
             }
 
             // If verified and if the user is not found in the firestore database then go to the input user route
-            if (state.status == VerificationStatus.verified) {
+            if (state.status == VerificationStatus.verifiedNewUser) {
               showSnackBar(
                 context,
                 message: "Your mobile number is verified.",
@@ -144,12 +144,14 @@ class _InputPinScreenState extends State<InputPinScreen> {
             }
 
             // If the user is found on the database then go to the MainAppRoute
-            if (state.status == VerificationStatus.verified) {
-              showSnackBar(
-                context,
-                message: "Your mobile number is verified.",
-                type: SnackBarType.success,
-              );
+            if (state.status == VerificationStatus.verifiedExistingUser) {
+              if (context.mounted) {
+                showSnackBar(
+                  context,
+                  message: "Your mobile number is verified.",
+                  type: SnackBarType.success,
+                );
+              }
               await Future.delayed(const Duration(seconds: 2));
               if (context.mounted) {
                 context.router.push(MainAppRoute());

@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
+import 'package:rain_check/core/domain/cubit/auth_user_cubit.dart';
 import 'package:rain_check/core/domain/i_auth_user_repository.dart';
 import 'package:rain_check/core/repository/user_model/user_vm.dart';
 
@@ -10,23 +11,13 @@ part 'verification_cubit.freezed.dart';
 
 /// Handles OTP verification logic
 class VerificationCubit extends Cubit<VerificationState> {
-  final IAuthUserRepository _repository;
-  final String phoneNumber;
+  final IAuthUserRepository iAuthUserRepository;
+  final AuthUserCubit authUserCubit;
 
   VerificationCubit({
-    required IAuthUserRepository repository,
-    required this.phoneNumber,
-  }) : _repository = repository,
-       super(const VerificationState()) {
-    _initialize();
-  }
-
-  /// Initialize by sending OTP
-  Future<void> _initialize() async {
-    if (phoneNumber.isNotEmpty) {
-      await sendOTP(phoneNumber);
-    }
-  }
+    required this.iAuthUserRepository,
+    required this.authUserCubit,
+  }) : super(const VerificationState());
 
   /// Send OTP to phone number
   Future<void> sendOTP(String phone) async {
@@ -34,7 +25,7 @@ class VerificationCubit extends Cubit<VerificationState> {
       state.copyWith(status: VerificationStatus.loading, errorMessage: null),
     );
 
-    final result = await _repository.sendOTP(phone);
+    final result = await iAuthUserRepository.sendOTP(phone);
 
     result.fold(
       (failure) => emit(
@@ -92,7 +83,10 @@ class VerificationCubit extends Cubit<VerificationState> {
     );
 
     // Step 1: Verify the OTP
-    final verifyResult = await _repository.verifyOTP(verificationId, otpCode);
+    final verifyResult = await iAuthUserRepository.verifyOTP(
+      verificationId,
+      otpCode,
+    );
 
     await verifyResult.fold(
       (failure) async {
@@ -105,7 +99,7 @@ class VerificationCubit extends Cubit<VerificationState> {
       },
       (_) async {
         // Step 2: Check if user exists in Firestore
-        final authUser = await _repository.authStream().first;
+        final authUser = await iAuthUserRepository.authStream().first;
         final currentUserId = authUser?.uid;
 
         if (currentUserId == null) {
@@ -118,7 +112,9 @@ class VerificationCubit extends Cubit<VerificationState> {
           return;
         }
 
-        final userResult = await _repository.getUserDetails(currentUserId);
+        final userResult = await iAuthUserRepository.getUserDetails(
+          currentUserId,
+        );
 
         userResult.fold(
           // User not found - need to create profile
@@ -141,11 +137,6 @@ class VerificationCubit extends Cubit<VerificationState> {
         );
       },
     );
-  }
-
-  /// Resend OTP code
-  Future<void> resendOTP() async {
-    await sendOTP(phoneNumber);
   }
 
   /// Clear any error messages
