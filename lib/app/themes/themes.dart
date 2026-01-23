@@ -31,8 +31,8 @@ class AppTheme {
 
     // AppBar
     appBarTheme: const AppBarTheme(
-      backgroundColor: AppColors.primary,
-      foregroundColor: AppColors.textWhite,
+      backgroundColor: AppColors.textWhite,
+      foregroundColor: AppColors.primary,
       elevation: 0,
       centerTitle: true,
     ),

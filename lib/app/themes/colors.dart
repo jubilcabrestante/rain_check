@@ -9,6 +9,7 @@ class AppColors {
   static const Color secondaryBackground = Color(0xFFF0F9FF); // #F0F9FF
   static const Color textWhite = Colors.white;
   static const Color textGrey = Colors.blueGrey;
+  static const Color lighttGrey = Color.fromARGB(255, 214, 233, 255);
   static const Color textBlack = Colors.black;
   static const Color error = Colors.red;
 
