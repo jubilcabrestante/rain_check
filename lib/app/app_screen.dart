@@ -46,43 +46,45 @@ class _MainAppScreenState extends State<MainAppScreen> {
       },
       builder: (context, state) {
         var fullName = state.currentUser?.fullName;
+        var profileImage = state.currentUser?.profilePictureUrl;
         return Scaffold(
           appBar: AppBar(
             backgroundColor: AppColors.background,
-            title: Padding(
+            title: Container(
               padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+              width: double.infinity,
               child: Row(
                 children: [
-                  Flexible(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Text(
-                          "RAIN CHECK",
-                          style: theme.textTheme.bodySmall?.copyWith(
-                            letterSpacing: 1.2,
-                            color: AppColors.textGrey,
-                          ),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(
+                        "RAIN CHECK",
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          letterSpacing: 1.2,
+                          color: AppColors.textGrey,
                         ),
-                        Text(
-                          NameFormatter.formatFullName(fullName.toString()),
-                          style: theme.textTheme.titleMedium,
-                        ),
-                      ],
-                    ),
+                      ),
+                      Text(
+                        NameFormatter.formatFullName(fullName.toString()),
+                        style: theme.textTheme.titleMedium,
+                      ),
+                    ],
                   ),
-                  Spacer(),
+                  const Spacer(),
                   GestureDetector(
                     onTap: () =>
                         LogoutDialog.show(context), // <-- show the dialog
-                    child: const CircleAvatar(
+                    child: CircleAvatar(
                       radius: 20,
-                      child: Icon(
-                        Icons.account_circle,
-                        color: AppColors.primary,
-                        size: 30,
-                      ),
+                      child: profileImage != null
+                          ? ClipOval(child: Image.network(profileImage))
+                          : const Icon(
+                              Icons.account_circle,
+                              color: AppColors.primary,
+                              size: 30,
+                            ),
                     ),
                   ),
                 ],
@@ -94,7 +96,7 @@ class _MainAppScreenState extends State<MainAppScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                _WeatherHeader(location: location),
+                _WeatherHeader(),
                 const Gap(20),
                 Text("Quick Actions", style: theme.textTheme.titleMedium),
                 const Gap(8),
@@ -147,8 +149,7 @@ class _MainAppScreenState extends State<MainAppScreen> {
 
 /// Weather header widget
 class _WeatherHeader extends StatefulWidget {
-  final String location;
-  const _WeatherHeader({required this.location});
+  const _WeatherHeader();
 
   @override
   State<_WeatherHeader> createState() => _WeatherHeaderState();
@@ -157,75 +158,143 @@ class _WeatherHeader extends StatefulWidget {
 class _WeatherHeaderState extends State<_WeatherHeader> {
   @override
   Widget build(BuildContext context) {
-    var theme = Theme.of(context);
-    return Container(
-      padding: EdgeInsets.all(15),
-      decoration: BoxDecoration(
-        color: AppColors.secondary,
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Location Row
-          Row(
-            children: [
-              const Icon(Icons.pin_drop, size: 28, color: AppColors.textWhite),
-              const Gap(8),
-              Text(
-                "Puerto Princesa City",
-                style: theme.textTheme.bodyLarge?.copyWith(
-                  color: AppColors.textWhite,
-                ),
-              ),
-            ],
-          ),
-          const Gap(8),
-          Text("Today's Forecast", style: theme.textTheme.titleLarge),
-          const Gap(16),
+    // TODO: Implement dynamic data here
+    var location = "Puerto Princesa City";
+    var accummulation = 5;
+    var temperature = 27;
+    var chanceOfRain = 20;
 
-          // Rain info
-          Row(
-            children: [
-              const Icon(Icons.water_drop, size: 40, color: AppColors.primary),
-              const Gap(8),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text("40%", style: theme.textTheme.titleMedium),
-                  const Text("Light showers expected"),
-                  const Text("Accumulation: 5mm"),
-                ],
-              ),
-            ],
-          ),
-          const Gap(16),
+    // light, moderate and heavy
+    var expectedRisk = "Light";
+    final theme = Theme.of(context);
 
-          // Temperature Now
-          Row(
-            children: const [
-              Icon(Icons.thermostat, size: 40, color: AppColors.textWhite),
-              Gap(12),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    "Now",
-                    style: TextStyle(fontSize: 16, color: AppColors.textWhite),
-                  ),
-                  Text(
-                    "18°C",
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
+    return Card(
+      elevation: 6,
+      child: Padding(
+        padding: const EdgeInsets.all(15),
+        child: Stack(
+          children: [
+            // MAIN CONTENT
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Location
+                Row(
+                  children: [
+                    const Icon(
+                      Icons.pin_drop,
+                      size: 28,
                       color: AppColors.textWhite,
                     ),
+                    const Gap(8),
+                    Text(
+                      location,
+                      style: theme.textTheme.bodyLarge?.copyWith(
+                        color: AppColors.textWhite,
+                      ),
+                    ),
+                  ],
+                ),
+
+                const Gap(8),
+
+                Text(
+                  "Today's Forecast",
+                  style: theme.textTheme.titleLarge?.copyWith(
+                    color: AppColors.textGrey,
+                  ),
+                ),
+
+                const Gap(16),
+
+                // Rain info
+                Row(
+                  children: [
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Icon(
+                              Icons.cloudy_snowing,
+                              size: 35,
+                              color: AppColors.textWhite,
+                            ),
+                            Gap(12),
+                            Text(
+                              "$chanceOfRain%",
+                              style: theme.textTheme.titleLarge?.copyWith(
+                                color: AppColors.textWhite,
+                              ),
+                            ),
+                          ],
+                        ),
+                        Gap(12),
+                        Text(
+                          "$expectedRisk showers expected",
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                            color: AppColors.textGrey,
+                          ),
+                        ),
+                        Text(
+                          "Accumulation: $accummulation",
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: AppColors.textGrey,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+
+                const Gap(24), // leave room for bottom-right content
+              ],
+            ),
+
+            // TEMPERATURE (BOTTOM RIGHT)
+            Positioned(
+              right: 8,
+              bottom: 8,
+              child: Row(
+                children: [
+                  const Icon(
+                    Icons.thermostat,
+                    size: 40,
+                    color: AppColors.textWhite,
+                  ),
+                  const Gap(6),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        "Now",
+                        style: TextStyle(
+                          fontSize: 16,
+                          color: AppColors.textWhite,
+                        ),
+                      ),
+                      Text(
+                        "$temperature °C",
+                        style: const TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.textWhite,
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),
-            ],
-          ),
-        ],
+            ),
+
+            // WATER DROP ICON (TOP RIGHT)
+            const Positioned(
+              top: 8,
+              right: 8,
+              child: Icon(Icons.water_drop, size: 70, color: AppColors.primary),
+            ),
+          ],
+        ),
       ),
     );
   }
