@@ -21,6 +21,9 @@ abstract class IAuthUserRepository {
   ResultFuture<bool> forgotPassword(String email);
   ResultVoid logout();
 
-  ResultFuture<String?> sendOTP(String phoneNumber);
-  ResultFuture<bool> verifyOTP(String verificationId, String smsCode);
+  ResultFuture<String?> signInWithPhoneNumber(String phoneNumber);
+  ResultFuture<UserCredential> verifyPhoneOTP(
+    String verificationId,
+    String smsCode,
+  );
 }

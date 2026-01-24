@@ -46,9 +46,9 @@ class AuthUserCubit extends Cubit<AuthUserState> {
           ),
         );
       },
-      onError: (error) => emit(
-        AuthUserState(status: AuthStatus.error, message: error.toString()),
-      ),
+      // onError: (error) => emit(
+      //   AuthUserState(status: AuthStatus.error, message: error.toString()),
+      // ),
     );
   }
 
@@ -151,12 +151,7 @@ class AuthUserCubit extends Cubit<AuthUserState> {
       (failure) => emit(
         state.copyWith(status: AuthStatus.error, message: failure.errorMesage),
       ),
-      (_) => emit(
-        state.copyWith(
-          status: AuthStatus.passwordResetSent,
-          message: 'Password reset email sent. Please check your inbox.',
-        ),
-      ),
+      (_) => emit(state.copyWith(status: AuthStatus.passwordResetSent)),
     );
   }
 
@@ -182,6 +177,16 @@ class AuthUserCubit extends Cubit<AuthUserState> {
   /// Clear user data (used internally)
   void clearUser() {
     emit(const AuthUserState(status: AuthStatus.unauthenticated));
+  }
+
+  Future<void> setAuthenticatedUser(UserVM user) async {
+    emit(
+      state.copyWith(
+        status: AuthStatus.authenticated,
+        currentUser: user,
+        message: null,
+      ),
+    );
   }
 
   @override

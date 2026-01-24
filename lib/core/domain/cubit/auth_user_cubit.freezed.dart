@@ -49,7 +49,7 @@ $Res call({
 });
 
 
-
+$UserVMCopyWith<$Res>? get currentUser;
 
 }
 /// @nodoc
@@ -71,7 +71,19 @@ as String?,verificationId: freezed == verificationId ? _self.verificationId : ve
 as String?,
   ));
 }
+/// Create a copy of AuthUserState
+/// with the given fields replaced by the non-null parameter values.
+@override
+@pragma('vm:prefer-inline')
+$UserVMCopyWith<$Res>? get currentUser {
+    if (_self.currentUser == null) {
+    return null;
+  }
 
+  return $UserVMCopyWith<$Res>(_self.currentUser!, (value) {
+    return _then(_self.copyWith(currentUser: value));
+  });
+}
 }
 
 
@@ -251,7 +263,7 @@ $Res call({
 });
 
 
-
+@override $UserVMCopyWith<$Res>? get currentUser;
 
 }
 /// @nodoc
@@ -274,7 +286,19 @@ as String?,
   ));
 }
 
+/// Create a copy of AuthUserState
+/// with the given fields replaced by the non-null parameter values.
+@override
+@pragma('vm:prefer-inline')
+$UserVMCopyWith<$Res>? get currentUser {
+    if (_self.currentUser == null) {
+    return null;
+  }
 
+  return $UserVMCopyWith<$Res>(_self.currentUser!, (value) {
+    return _then(_self.copyWith(currentUser: value));
+  });
+}
 }
 
 // dart format on

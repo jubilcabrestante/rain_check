@@ -44,16 +44,16 @@ class _LoginScreenState extends State<LoginScreen> {
             }
 
             // Handle errors
-            if (state.status == AuthStatus.error && state.message != null) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text(state.message!),
-                  backgroundColor: Colors.red,
-                  duration: const Duration(seconds: 3),
-                ),
-              );
-              return;
-            }
+            // if (state.status == AuthStatus.error && state.message != null) {
+            //   ScaffoldMessenger.of(context).showSnackBar(
+            //     SnackBar(
+            //       content: Text(state.message!),
+            //       backgroundColor: Colors.red,
+            //       duration: const Duration(seconds: 3),
+            //     ),
+            //   );
+            //   return;
+            // }
 
             // ✅ Navigate ONLY when authenticated
             if (state.status == AuthStatus.authenticated &&

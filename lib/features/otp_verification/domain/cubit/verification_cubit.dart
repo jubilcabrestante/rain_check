@@ -20,12 +20,16 @@ class VerificationCubit extends Cubit<VerificationState> {
   }) : super(const VerificationState());
 
   /// Send OTP to phone number
-  Future<void> sendOTP(String phone) async {
+  Future<void> sendOTPForSignIn(String phoneNumber) async {
     emit(
-      state.copyWith(status: VerificationStatus.loading, errorMessage: null),
+      state.copyWith(
+        status: VerificationStatus.loading,
+        errorMessage: null,
+        phoneNumber: phoneNumber,
+      ),
     );
 
-    final result = await iAuthUserRepository.sendOTP(phone);
+    final result = await iAuthUserRepository.signInWithPhoneNumber(phoneNumber);
 
     result.fold(
       (failure) => emit(
@@ -40,13 +44,16 @@ class VerificationCubit extends Cubit<VerificationState> {
             state.copyWith(
               status: VerificationStatus.otpSent,
               verificationId: verificationId,
+              phoneNumber: phoneNumber,
               errorMessage: null,
             ),
           );
         } else {
+          // Auto-verified
           emit(
             state.copyWith(
               status: VerificationStatus.phoneLinked,
+              phoneNumber: phoneNumber,
               errorMessage: null,
             ),
           );
@@ -55,8 +62,8 @@ class VerificationCubit extends Cubit<VerificationState> {
     );
   }
 
-  /// Verify the entered OTP code and check if user exists
-  Future<void> verifyOTP(String otpCode) async {
+  /// Verify OTP for phone sign-in
+  Future<void> verifyPhoneSignInOTP(String otpCode) async {
     if (otpCode.length != 6) {
       emit(
         state.copyWith(
@@ -82,8 +89,7 @@ class VerificationCubit extends Cubit<VerificationState> {
       state.copyWith(status: VerificationStatus.verifying, errorMessage: null),
     );
 
-    // Step 1: Verify the OTP
-    final verifyResult = await iAuthUserRepository.verifyOTP(
+    final verifyResult = await iAuthUserRepository.verifyPhoneOTP(
       verificationId,
       otpCode,
     );
@@ -97,46 +103,99 @@ class VerificationCubit extends Cubit<VerificationState> {
           ),
         );
       },
-      (_) async {
-        // Step 2: Check if user exists in Firestore
-        final authUser = await iAuthUserRepository.authStream().first;
-        final currentUserId = authUser?.uid;
+      (userCredential) async {
+        final firebaseUser = userCredential.user!;
 
-        if (currentUserId == null) {
-          emit(
-            state.copyWith(
-              status: VerificationStatus.error,
-              errorMessage: 'Authentication failed. Please try again.',
-            ),
-          );
-          return;
-        }
-
+        // Check if user document exists
         final userResult = await iAuthUserRepository.getUserDetails(
-          currentUserId,
+          firebaseUser.uid,
         );
 
         userResult.fold(
           // User not found - need to create profile
-          (failure) => emit(
-            state.copyWith(
-              status: VerificationStatus.verifiedNewUser,
-              userExists: false,
-              errorMessage: null,
-            ),
-          ),
+          (failure) {
+            emit(
+              state.copyWith(
+                status: VerificationStatus.verifiedNewUser,
+                userExists: false,
+                errorMessage: null,
+              ),
+            );
+          },
           // User exists - can proceed to app
-          (user) => emit(
-            state.copyWith(
-              status: VerificationStatus.verifiedExistingUser,
-              userExists: true,
-              currentUser: user,
-              errorMessage: null,
-            ),
-          ),
+          (user) {
+            emit(
+              state.copyWith(
+                status: VerificationStatus.verifiedExistingUser,
+                userExists: true,
+                currentUser: user,
+                errorMessage: null,
+              ),
+            );
+          },
         );
       },
     );
+  }
+
+  /// Create new user profile after phone verification
+  Future<void> createUserProfile({required String fullName}) async {
+    emit(state.copyWith(status: VerificationStatus.loading));
+
+    try {
+      final authUser = await iAuthUserRepository.authStream().first;
+      final currentUserId = authUser?.uid;
+
+      if (currentUserId == null) {
+        emit(
+          state.copyWith(
+            status: VerificationStatus.error,
+            errorMessage: 'User not authenticated',
+          ),
+        );
+        return;
+      }
+
+      // Create new user document
+      final newUser = UserVM(
+        id: currentUserId,
+        fullName: fullName,
+        phoneNumber: state.phoneNumber,
+        email: authUser?.email,
+      );
+
+      final result = await iAuthUserRepository.addUserDetails(newUser);
+
+      result.fold(
+        (failure) {
+          emit(
+            state.copyWith(
+              status: VerificationStatus.error,
+              errorMessage: failure.errorMesage ?? 'Failed to create profile',
+            ),
+          );
+        },
+        (user) async {
+          // Updates the authenticated user
+          await authUserCubit.setAuthenticatedUser(user);
+
+          emit(
+            state.copyWith(
+              status: VerificationStatus.profileCreated,
+              currentUser: user,
+              errorMessage: null,
+            ),
+          );
+        },
+      );
+    } catch (e) {
+      emit(
+        state.copyWith(
+          status: VerificationStatus.error,
+          errorMessage: e.toString(),
+        ),
+      );
+    }
   }
 
   /// Clear any error messages

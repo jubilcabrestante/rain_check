@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:developer';
 
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
@@ -33,11 +32,7 @@ class _InputPinScreenState extends State<InputPinScreen> {
   @override
   void initState() {
     super.initState();
-    _focusNode;
-    _pinController;
-    if (widget.phoneNumber.isNotEmpty) {
-      _startTimer();
-    }
+    _startTimer();
   }
 
   @override
@@ -68,11 +63,6 @@ class _InputPinScreenState extends State<InputPinScreen> {
     });
   }
 
-  void _resendOtp() {
-    log("Resend OTP clicked");
-    _startTimer();
-  }
-
   @override
   Widget build(BuildContext context) {
     final defaultPinTheme = PinTheme(
@@ -100,12 +90,23 @@ class _InputPinScreenState extends State<InputPinScreen> {
       ),
     );
 
+    final errorPinTheme = defaultPinTheme.copyWith(
+      decoration: BoxDecoration(
+        border: Border.all(color: Colors.red),
+        borderRadius: BorderRadius.circular(20),
+      ),
+    );
+
     final theme = Theme.of(context);
 
     return Scaffold(
       appBar: AppBar(
         title: const Text("Enter OTP"),
         backgroundColor: AppColors.background,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: AppColors.primary),
+          onPressed: () => Navigator.pop(context),
+        ),
       ),
       body: SafeArea(
         child: BlocConsumer<VerificationCubit, VerificationState>(
@@ -113,7 +114,7 @@ class _InputPinScreenState extends State<InputPinScreen> {
             // Handle errors
             if (state.status == VerificationStatus.error &&
                 state.errorMessage != null) {
-              _pinController.clear(); // Clear wrong PIN
+              _pinController.clear();
               showSnackBar(
                 context,
                 message: state.errorMessage!,
@@ -126,18 +127,18 @@ class _InputPinScreenState extends State<InputPinScreen> {
             if (state.status == VerificationStatus.otpSent) {
               showSnackBar(
                 context,
-                message: "OTP Successfully Sent",
+                message: "New OTP sent successfully",
                 type: SnackBarType.success,
               );
-              _resendOtp(); // Restart timer
+              _startTimer();
               return;
             }
 
-            // Navigate for new user (need to create profile)
+            // ✅ Navigate for new user (need to create profile)
             if (state.status == VerificationStatus.verifiedNewUser) {
               showSnackBar(
                 context,
-                message: "Your mobile number is verified",
+                message: "Phone verified! Please complete your profile",
                 type: SnackBarType.success,
               );
 
@@ -145,16 +146,17 @@ class _InputPinScreenState extends State<InputPinScreen> {
               if (context.mounted) {
                 context.router.pushAndPopUntil(
                   InputUserRoute(phoneNumber: widget.phoneNumber),
-                  predicate: (route) => false, // Remove all previous routes
+                  predicate: (route) => false,
                 );
               }
             }
 
-            // Navigate for existing user
+            // ✅ Navigate for existing user (profile already exists)
             if (state.status == VerificationStatus.verifiedExistingUser) {
               showSnackBar(
                 context,
-                message: "Welcome back!",
+                message:
+                    "Welcome back, ${state.currentUser?.fullName ?? 'User'}!",
                 type: SnackBarType.success,
               );
 
@@ -162,7 +164,7 @@ class _InputPinScreenState extends State<InputPinScreen> {
               if (context.mounted) {
                 context.router.pushAndPopUntil(
                   MainAppRoute(),
-                  predicate: (route) => false, // Remove all previous routes
+                  predicate: (route) => false,
                 );
               }
             }
@@ -190,19 +192,13 @@ class _InputPinScreenState extends State<InputPinScreen> {
                     defaultPinTheme: defaultPinTheme,
                     focusedPinTheme: focusedPinTheme,
                     submittedPinTheme: submittedPinTheme,
-                    enabled: !isVerifying, // Disable during verification
+                    errorPinTheme: errorPinTheme,
+                    enabled: !isVerifying,
+
                     // ✅ Auto-submit when 6 digits are entered
                     onCompleted: (pin) {
-                      verifyCubit.verifyOTP(pin);
+                      verifyCubit.verifyPhoneSignInOTP(pin);
                     },
-
-                    // Show error styling if verification failed
-                    errorPinTheme: defaultPinTheme.copyWith(
-                      decoration: BoxDecoration(
-                        border: Border.all(color: Colors.red),
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                    ),
 
                     pinputAutovalidateMode: PinputAutovalidateMode.onSubmit,
                   ),
@@ -214,14 +210,20 @@ class _InputPinScreenState extends State<InputPinScreen> {
                     child: Builder(
                       builder: (context) {
                         if (isVerifying) {
-                          return const CircularProgressIndicator.adaptive();
+                          return const Column(
+                            children: [
+                              CircularProgressIndicator.adaptive(),
+                              Gap(8),
+                              Text("Verifying..."),
+                            ],
+                          );
                         }
 
                         if (_canResend) {
                           return TextButton(
                             onPressed: () {
                               _pinController.clear();
-                              verifyCubit.sendOTP(widget.phoneNumber);
+                              verifyCubit.sendOTPForSignIn(widget.phoneNumber);
                             },
                             child: Text(
                               "Resend OTP",

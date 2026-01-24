@@ -2,6 +2,7 @@ import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:gap/gap.dart';
+import 'package:rain_check/app/logout_dialog.dart';
 import 'package:rain_check/app/router/router.gr.dart';
 import 'package:rain_check/app/themes/colors.dart';
 import 'package:rain_check/core/domain/cubit/auth_user_cubit.dart';
@@ -72,12 +73,16 @@ class _MainAppScreenState extends State<MainAppScreen> {
                     ),
                   ),
                   Spacer(),
-                  const CircleAvatar(
-                    radius: 20,
-                    child: Icon(
-                      Icons.account_circle,
-                      color: AppColors.primary,
-                      size: 30,
+                  GestureDetector(
+                    onTap: () =>
+                        LogoutDialog.show(context), // <-- show the dialog
+                    child: const CircleAvatar(
+                      radius: 20,
+                      child: Icon(
+                        Icons.account_circle,
+                        color: AppColors.primary,
+                        size: 30,
+                      ),
                     ),
                   ),
                 ],

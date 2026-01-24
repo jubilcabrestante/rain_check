@@ -27,17 +27,16 @@ class _InputNumberScreenState extends State<InputNumberScreen> {
 
   @override
   void initState() {
+    super.initState();
     focusNode = FocusNode();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      focusNode.requestFocus(); // Request focus after the widget tree is built
+      focusNode.requestFocus();
     });
-    super.initState();
   }
 
   @override
   void dispose() {
     focusNode.dispose();
-    // TODO: implement dispose
     super.dispose();
   }
 
@@ -55,7 +54,6 @@ class _InputNumberScreenState extends State<InputNumberScreen> {
       ),
       body: SafeArea(
         child: BlocConsumer<VerificationCubit, VerificationState>(
-          // ✅ ONLY listen to state changes, don't check previous states
           listener: (context, state) {
             // Handle errors
             if (state.status == VerificationStatus.error &&
@@ -68,15 +66,14 @@ class _InputNumberScreenState extends State<InputNumberScreen> {
               return;
             }
 
-            // ✅ Navigate when OTP is successfully sent
+            // ✅ Navigate to PIN screen when OTP is sent
             if (state.status == VerificationStatus.otpSent) {
               showSnackBar(
                 context,
-                message: "OTP Successfully Sent",
+                message: "OTP sent successfully",
                 type: SnackBarType.success,
               );
 
-              // Navigate immediately after showing snackbar
               Future.delayed(const Duration(milliseconds: 800), () {
                 if (context.mounted) {
                   context.router.push(InputPinRoute(phoneNumber: mobileNumber));
@@ -84,18 +81,20 @@ class _InputNumberScreenState extends State<InputNumberScreen> {
               });
             }
 
-            // ✅ Handle phoneLinked status (if user already has phone linked)
+            // ✅ Handle phone already linked
             if (state.status == VerificationStatus.phoneLinked) {
               showSnackBar(
                 context,
-                message: "Phone number is already linked to an account",
+                message: "Phone number verified automatically",
                 type: SnackBarType.success,
               );
 
               Future.delayed(const Duration(milliseconds: 800), () {
                 if (context.mounted) {
-                  // Navigate to login or main app based on your flow
-                  context.router.push(MainAppRoute());
+                  context.router.pushAndPopUntil(
+                    MainAppRoute(),
+                    predicate: (route) => false,
+                  );
                 }
               });
             }
@@ -117,7 +116,7 @@ class _InputNumberScreenState extends State<InputNumberScreen> {
 
                     // Phone Number Input Field
                     IntlPhoneField(
-                      enabled: !isLoading, // Disable during loading
+                      enabled: !isLoading,
                       autofocus: true,
                       focusNode: focusNode,
                       decoration: InputDecoration(
@@ -155,9 +154,11 @@ class _InputNumberScreenState extends State<InputNumberScreen> {
                         child: AppElevatedButton(
                           onPressed: isLoading
                               ? null
-                              : () => context.read<VerificationCubit>().sendOTP(
-                                  mobileNumber,
-                                ),
+                              : () {
+                                  context
+                                      .read<VerificationCubit>()
+                                      .sendOTPForSignIn(mobileNumber);
+                                },
                           text: "CONTINUE",
                           isLoading: isLoading,
                         ),
