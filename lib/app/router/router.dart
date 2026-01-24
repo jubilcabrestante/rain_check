@@ -13,11 +13,9 @@ class AppRouter extends RootStackRouter {
     AutoRoute(page: LoginRoute.page, path: '/login', initial: true),
     AutoRoute(page: ForgotPasswordRoute.page, path: '/forgot-password'),
     AutoRoute(page: SignupRoute.page, path: '/sign-up'),
-    AutoRoute(
-      page: InputNumberRoute.page,
-      path: '/input-number',
-      children: [AutoRoute(page: InputPinRoute.page, path: 'input-pin')],
-    ),
+    AutoRoute(page: InputNumberRoute.page, path: '/input-number'),
+    AutoRoute(page: InputPinRoute.page, path: '/input-pin'),
+    AutoRoute(page: InputUserRoute.page, path: '/input-user'),
     AutoRoute(
       page: MainAppRoute.page,
       path: '/main',
