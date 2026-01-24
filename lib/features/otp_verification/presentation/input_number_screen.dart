@@ -55,7 +55,7 @@ class _InputNumberScreenState extends State<InputNumberScreen> {
       body: SafeArea(
         child: BlocConsumer<VerificationCubit, VerificationState>(
           listener: (context, state) {
-            // Handle errors
+            // ✅ Show error in snackbar if there's an error
             if (state.status == VerificationStatus.error &&
                 state.errorMessage != null) {
               showSnackBar(
@@ -63,40 +63,23 @@ class _InputNumberScreenState extends State<InputNumberScreen> {
                 message: state.errorMessage!,
                 type: SnackBarType.fail,
               );
-              return;
             }
 
-            // ✅ Navigate to PIN screen when OTP is sent
+            // ✅ Handle OTP sent
             if (state.status == VerificationStatus.otpSent) {
-              showSnackBar(
-                context,
-                message: "OTP sent successfully",
-                type: SnackBarType.success,
-              );
-
-              Future.delayed(const Duration(milliseconds: 800), () {
-                if (context.mounted) {
-                  context.router.push(InputPinRoute(phoneNumber: mobileNumber));
-                }
-              });
-            }
-
-            // ✅ Handle phone already linked
-            if (state.status == VerificationStatus.phoneLinked) {
-              showSnackBar(
-                context,
-                message: "Phone number verified automatically",
-                type: SnackBarType.success,
-              );
-
-              Future.delayed(const Duration(milliseconds: 800), () {
-                if (context.mounted) {
-                  context.router.pushAndPopUntil(
-                    MainAppRoute(),
-                    predicate: (route) => false,
+              // ✅ Show snackbar AFTER navigation starts
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                if (mounted) {
+                  showSnackBar(
+                    context,
+                    message: "OTP sent successfully",
+                    type: SnackBarType.success,
                   );
                 }
               });
+
+              // ✅ Navigate immediately
+              context.router.push(InputPinRoute());
             }
           },
           builder: (context, state) {
@@ -129,15 +112,20 @@ class _InputNumberScreenState extends State<InputNumberScreen> {
                       ),
                       initialCountryCode: 'PH',
                       onChanged: (phone) {
-                        final isComplete = phone.completeNumber.length == 13;
+                        // ✅ FIXED: Check if phone number is complete
+                        // Philippine numbers: +63 (country) + 9 (area) + 9 digits
+                        // Total: +639XXXXXXXXX = 13 characters
+                        var bool = phone.completeNumber.length < 13;
 
-                        if (isComplete) {
+                        if (phone.completeNumber.length == 13) {
                           focusNode.unfocus();
-                          setState(() {
+                          return setState(() {
                             allowToContinue = true;
                             mobileNumber = phone.completeNumber;
                           });
-                        } else if (allowToContinue) {
+                        }
+
+                        if (bool && allowToContinue) {
                           setState(() {
                             allowToContinue = false;
                           });
@@ -147,7 +135,7 @@ class _InputNumberScreenState extends State<InputNumberScreen> {
 
                     const Gap(16),
 
-                    // Continue Button
+                    // ✅ Button only shows if allowToContinue is true
                     if (allowToContinue)
                       SizedBox(
                         width: double.infinity,
@@ -155,6 +143,7 @@ class _InputNumberScreenState extends State<InputNumberScreen> {
                           onPressed: isLoading
                               ? null
                               : () {
+                                  // ✅ Send OTP when button is tapped
                                   context
                                       .read<VerificationCubit>()
                                       .sendOTPForSignIn(mobileNumber);

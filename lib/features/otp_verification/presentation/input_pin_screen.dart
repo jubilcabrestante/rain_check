@@ -14,8 +14,7 @@ import 'package:rain_check/features/otp_verification/domain/cubit/verification_c
 
 @RoutePage()
 class InputPinScreen extends StatefulWidget {
-  final String phoneNumber;
-  const InputPinScreen({super.key, required this.phoneNumber});
+  const InputPinScreen({super.key});
 
   @override
   State<InputPinScreen> createState() => _InputPinScreenState();
@@ -145,7 +144,7 @@ class _InputPinScreenState extends State<InputPinScreen> {
               await Future.delayed(const Duration(seconds: 1));
               if (context.mounted) {
                 context.router.pushAndPopUntil(
-                  InputUserRoute(phoneNumber: widget.phoneNumber),
+                  InputUserRoute(),
                   predicate: (route) => false,
                 );
               }
@@ -153,12 +152,14 @@ class _InputPinScreenState extends State<InputPinScreen> {
 
             // ✅ Navigate for existing user (profile already exists)
             if (state.status == VerificationStatus.verifiedExistingUser) {
-              showSnackBar(
-                context,
-                message:
-                    "Welcome back, ${state.currentUser?.fullName ?? 'User'}!",
-                type: SnackBarType.success,
-              );
+              if (context.mounted) {
+                showSnackBar(
+                  context,
+                  message:
+                      "Welcome back, ${state.currentUser?.fullName ?? 'User'}!",
+                  type: SnackBarType.success,
+                );
+              }
 
               await Future.delayed(const Duration(seconds: 1));
               if (context.mounted) {
@@ -209,21 +210,11 @@ class _InputPinScreenState extends State<InputPinScreen> {
                   Center(
                     child: Builder(
                       builder: (context) {
-                        if (isVerifying) {
-                          return const Column(
-                            children: [
-                              CircularProgressIndicator.adaptive(),
-                              Gap(8),
-                              Text("Verifying..."),
-                            ],
-                          );
-                        }
-
                         if (_canResend) {
                           return TextButton(
                             onPressed: () {
                               _pinController.clear();
-                              verifyCubit.sendOTPForSignIn(widget.phoneNumber);
+                              verifyCubit.sendOTPForSignIn(state.phoneNumber!);
                             },
                             child: Text(
                               "Resend OTP",

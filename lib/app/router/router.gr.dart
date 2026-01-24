@@ -10,18 +10,17 @@
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 import 'package:auto_route/auto_route.dart' as _i11;
-import 'package:flutter/material.dart' as _i12;
 import 'package:rain_check/app/app_screen.dart' as _i8;
 import 'package:rain_check/features/calculate/calculate.dart' as _i1;
 import 'package:rain_check/features/forgot_password/forgot_password.dart'
     as _i2;
 import 'package:rain_check/features/guide/guide.dart' as _i3;
 import 'package:rain_check/features/login/login.dart' as _i7;
-import 'package:rain_check/features/otp_verification/input_number_screen.dart'
+import 'package:rain_check/features/otp_verification/presentation/input_number_screen.dart'
     as _i4;
-import 'package:rain_check/features/otp_verification/input_pin_screen.dart'
+import 'package:rain_check/features/otp_verification/presentation/input_pin_screen.dart'
     as _i5;
-import 'package:rain_check/features/otp_verification/input_user_screen.dart'
+import 'package:rain_check/features/otp_verification/presentation/input_user_screen.dart'
     as _i6;
 import 'package:rain_check/features/predict/predict.dart' as _i9;
 import 'package:rain_check/features/signup/signup.dart' as _i10;
@@ -92,96 +91,34 @@ class InputNumberRoute extends _i11.PageRouteInfo<void> {
 
 /// generated route for
 /// [_i5.InputPinScreen]
-class InputPinRoute extends _i11.PageRouteInfo<InputPinRouteArgs> {
-  InputPinRoute({
-    _i12.Key? key,
-    required String phoneNumber,
-    List<_i11.PageRouteInfo>? children,
-  }) : super(
-         InputPinRoute.name,
-         args: InputPinRouteArgs(key: key, phoneNumber: phoneNumber),
-         initialChildren: children,
-       );
+class InputPinRoute extends _i11.PageRouteInfo<void> {
+  const InputPinRoute({List<_i11.PageRouteInfo>? children})
+    : super(InputPinRoute.name, initialChildren: children);
 
   static const String name = 'InputPinRoute';
 
   static _i11.PageInfo page = _i11.PageInfo(
     name,
     builder: (data) {
-      final args = data.argsAs<InputPinRouteArgs>();
-      return _i5.InputPinScreen(key: args.key, phoneNumber: args.phoneNumber);
+      return const _i5.InputPinScreen();
     },
   );
 }
 
-class InputPinRouteArgs {
-  const InputPinRouteArgs({this.key, required this.phoneNumber});
-
-  final _i12.Key? key;
-
-  final String phoneNumber;
-
-  @override
-  String toString() {
-    return 'InputPinRouteArgs{key: $key, phoneNumber: $phoneNumber}';
-  }
-
-  @override
-  bool operator ==(Object other) {
-    if (identical(this, other)) return true;
-    if (other is! InputPinRouteArgs) return false;
-    return key == other.key && phoneNumber == other.phoneNumber;
-  }
-
-  @override
-  int get hashCode => key.hashCode ^ phoneNumber.hashCode;
-}
-
 /// generated route for
 /// [_i6.InputUserScreen]
-class InputUserRoute extends _i11.PageRouteInfo<InputUserRouteArgs> {
-  InputUserRoute({
-    _i12.Key? key,
-    required String phoneNumber,
-    List<_i11.PageRouteInfo>? children,
-  }) : super(
-         InputUserRoute.name,
-         args: InputUserRouteArgs(key: key, phoneNumber: phoneNumber),
-         initialChildren: children,
-       );
+class InputUserRoute extends _i11.PageRouteInfo<void> {
+  const InputUserRoute({List<_i11.PageRouteInfo>? children})
+    : super(InputUserRoute.name, initialChildren: children);
 
   static const String name = 'InputUserRoute';
 
   static _i11.PageInfo page = _i11.PageInfo(
     name,
     builder: (data) {
-      final args = data.argsAs<InputUserRouteArgs>();
-      return _i6.InputUserScreen(key: args.key, phoneNumber: args.phoneNumber);
+      return const _i6.InputUserScreen();
     },
   );
-}
-
-class InputUserRouteArgs {
-  const InputUserRouteArgs({this.key, required this.phoneNumber});
-
-  final _i12.Key? key;
-
-  final String phoneNumber;
-
-  @override
-  String toString() {
-    return 'InputUserRouteArgs{key: $key, phoneNumber: $phoneNumber}';
-  }
-
-  @override
-  bool operator ==(Object other) {
-    if (identical(this, other)) return true;
-    if (other is! InputUserRouteArgs) return false;
-    return key == other.key && phoneNumber == other.phoneNumber;
-  }
-
-  @override
-  int get hashCode => key.hashCode ^ phoneNumber.hashCode;
 }
 
 /// generated route for

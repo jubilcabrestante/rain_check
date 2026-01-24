@@ -32,32 +32,23 @@ class VerificationCubit extends Cubit<VerificationState> {
     final result = await iAuthUserRepository.signInWithPhoneNumber(phoneNumber);
 
     result.fold(
-      (failure) => emit(
-        state.copyWith(
-          status: VerificationStatus.error,
-          errorMessage: failure.errorMesage ?? 'Failed to send OTP',
-        ),
-      ),
-      (verificationId) {
-        if (verificationId != null) {
-          emit(
-            state.copyWith(
-              status: VerificationStatus.otpSent,
-              verificationId: verificationId,
-              phoneNumber: phoneNumber,
-              errorMessage: null,
-            ),
-          );
-        } else {
-          // Auto-verified
-          emit(
-            state.copyWith(
-              status: VerificationStatus.phoneLinked,
-              phoneNumber: phoneNumber,
-              errorMessage: null,
-            ),
-          );
-        }
+      (error) async {
+        emit(
+          state.copyWith(
+            status: VerificationStatus.error,
+            errorMessage: error.errorMesage ?? 'Failed to send OTP',
+          ),
+        );
+      },
+      (verficationId) {
+        emit(
+          state.copyWith(
+            status: VerificationStatus.otpSent,
+            verificationId: verficationId,
+            phoneNumber: phoneNumber,
+            errorMessage: null,
+          ),
+        );
       },
     );
   }

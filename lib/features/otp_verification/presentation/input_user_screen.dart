@@ -15,8 +15,7 @@ import 'package:flutter_icon_snackbar/flutter_icon_snackbar.dart';
 
 @RoutePage()
 class InputUserScreen extends StatefulWidget {
-  final String phoneNumber;
-  const InputUserScreen({super.key, required this.phoneNumber});
+  const InputUserScreen({super.key});
 
   @override
   State<InputUserScreen> createState() => _InputUserScreenState();
@@ -94,7 +93,7 @@ class _InputUserScreenState extends State<InputUserScreen> {
                       ),
                       const Gap(8),
                       Text(
-                        widget.phoneNumber,
+                        state.phoneNumber!,
                         style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                           color: AppColors.primary,
                           fontWeight: FontWeight.bold,
