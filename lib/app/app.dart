@@ -13,8 +13,7 @@ import 'package:rain_check/features/otp_verification/domain/cubit/verification_c
 import 'package:responsive_framework/responsive_framework.dart';
 
 class MainApp extends StatefulWidget {
-  final GoogleSignIn googleSignIn;
-  const MainApp({super.key, required this.googleSignIn});
+  const MainApp({super.key}); // ✅ Removed googleSignIn parameter
 
   @override
   State<MainApp> createState() => _MainAppState();
@@ -25,29 +24,25 @@ class _MainAppState extends State<MainApp> {
 
   late IAuthUserRepository authUserRepository;
   late AuthUserCubit _authUserCubit;
-  late FirebaseAuth _firebaseAuth;
-  late GoogleSignIn _googleSignIn;
-  late FirebaseFirestore _firestore;
   late VerificationCubit _verificationCubit;
 
   @override
   void initState() {
     super.initState();
 
-    // Initialize Firebase and Firestore references
-    _firebaseAuth = FirebaseAuth.instance;
-    _firestore = FirebaseFirestore.instance;
+    // ✅ Initialize all dependencies
+    final firebaseAuth = FirebaseAuth.instance;
+    final firestore = FirebaseFirestore.instance;
+    final googleSignIn = GoogleSignIn.instance; // ✅ Use the singleton instance
 
-    // Use the GoogleSignIn instance passed from main()
-    _googleSignIn = widget.googleSignIn;
-
-    // Initialize repository and cubit
+    // Initialize repository
     authUserRepository = AuthUserRepository(
-      auth: _firebaseAuth,
-      googleSignIn: _googleSignIn,
-      firestore: _firestore,
+      auth: firebaseAuth,
+      googleSignIn: googleSignIn,
+      firestore: firestore,
     );
 
+    // Initialize cubits
     _authUserCubit = AuthUserCubit(authUserRepository);
     _verificationCubit = VerificationCubit(
       iAuthUserRepository: authUserRepository,
@@ -55,10 +50,17 @@ class _MainAppState extends State<MainApp> {
     );
   }
 
-  // TODO: Implement app initialization logic
+  @override
+  void dispose() {
+    _authUserCubit.close();
+    _verificationCubit.close();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
-    var themeData = AppTheme.getInstance();
+    final themeData = AppTheme.getInstance();
+
     return MultiRepositoryProvider(
       providers: [
         RepositoryProvider<IAuthUserRepository>.value(
@@ -71,6 +73,8 @@ class _MainAppState extends State<MainApp> {
           BlocProvider<VerificationCubit>.value(value: _verificationCubit),
         ],
         child: MaterialApp.router(
+          debugShowCheckedModeBanner: false,
+          title: 'Rain Check',
           theme: themeData.lightTheme,
           routerConfig: _appRouter.config(
             includePrefixMatches: true,
@@ -79,17 +83,9 @@ class _MainAppState extends State<MainApp> {
           builder: (context, child) => ResponsiveBreakpoints.builder(
             child: child!,
             breakpoints: [
-              //480 dp, 600 dp, 840 dp, 960 dp, 1280 dp, 1440 dp, and 1600 dp.
-              // Extra Small (xs) - 0px to 599px (for small phones)
               Breakpoint(start: 0, end: 480, name: BreakPoints.small.value),
-
-              // Small (sm) - 600px to 899px (for larger phones or small tablets)
               Breakpoint(start: 481, end: 600, name: BreakPoints.medium.value),
-
-              // Medium (md) - 900px to 1199px (larger phones or very small tablets)
               Breakpoint(start: 601, end: 840, name: BreakPoints.large.value),
-
-              // Optionally, you can add larger breakpoints but if you only need phones, you can leave them out.
             ],
           ),
         ),
@@ -103,9 +99,6 @@ enum BreakPoints {
   medium("medium"),
   large("large");
 
-  // The value that will be associated with each enum member
   final String value;
-
-  // Constructor to assign the value
   const BreakPoints(this.value);
 }

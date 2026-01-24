@@ -25,7 +25,6 @@ class InputPinScreen extends StatefulWidget {
 class _InputPinScreenState extends State<InputPinScreen> {
   final _pinController = TextEditingController();
   final _focusNode = FocusNode();
-  final _formKey = GlobalKey<FormState>();
 
   late Timer _timer;
   int _secondsRemaining = 120;
@@ -104,12 +103,17 @@ class _InputPinScreenState extends State<InputPinScreen> {
     final theme = Theme.of(context);
 
     return Scaffold(
-      body: Form(
-        key: _formKey,
+      appBar: AppBar(
+        title: const Text("Enter OTP"),
+        backgroundColor: AppColors.background,
+      ),
+      body: SafeArea(
         child: BlocConsumer<VerificationCubit, VerificationState>(
           listener: (context, state) async {
+            // Handle errors
             if (state.status == VerificationStatus.error &&
                 state.errorMessage != null) {
+              _pinController.clear(); // Clear wrong PIN
               showSnackBar(
                 context,
                 message: state.errorMessage!,
@@ -117,101 +121,129 @@ class _InputPinScreenState extends State<InputPinScreen> {
               );
               return;
             }
+
+            // Handle resend OTP success
             if (state.status == VerificationStatus.otpSent) {
               showSnackBar(
                 context,
                 message: "OTP Successfully Sent",
                 type: SnackBarType.success,
               );
-              await Future.delayed(const Duration(seconds: 1));
-              if (context.mounted) _resendOtp();
+              _resendOtp(); // Restart timer
               return;
             }
 
-            // If verified and if the user is not found in the firestore database then go to the input user route
+            // Navigate for new user (need to create profile)
             if (state.status == VerificationStatus.verifiedNewUser) {
               showSnackBar(
                 context,
-                message: "Your mobile number is verified.",
+                message: "Your mobile number is verified",
                 type: SnackBarType.success,
               );
-              await Future.delayed(const Duration(seconds: 2));
+
+              await Future.delayed(const Duration(seconds: 1));
               if (context.mounted) {
-                context.router.push(
+                context.router.pushAndPopUntil(
                   InputUserRoute(phoneNumber: widget.phoneNumber),
+                  predicate: (route) => false, // Remove all previous routes
                 );
               }
             }
 
-            // If the user is found on the database then go to the MainAppRoute
+            // Navigate for existing user
             if (state.status == VerificationStatus.verifiedExistingUser) {
+              showSnackBar(
+                context,
+                message: "Welcome back!",
+                type: SnackBarType.success,
+              );
+
+              await Future.delayed(const Duration(seconds: 1));
               if (context.mounted) {
-                showSnackBar(
-                  context,
-                  message: "Your mobile number is verified.",
-                  type: SnackBarType.success,
+                context.router.pushAndPopUntil(
+                  MainAppRoute(),
+                  predicate: (route) => false, // Remove all previous routes
                 );
-              }
-              await Future.delayed(const Duration(seconds: 2));
-              if (context.mounted) {
-                context.router.push(MainAppRoute());
               }
             }
           },
           builder: (context, state) {
-            var verifyCubit = context.read<VerificationCubit>();
+            final verifyCubit = context.read<VerificationCubit>();
+            final isVerifying = state.status == VerificationStatus.verifying;
 
-            return Column(
-              children: [
-                HeaderTitle(title: "title", subtitle: "subtitle"),
-                Pinput(
-                  controller: _pinController,
-                  focusNode: _focusNode,
-                  length: 6,
-                  defaultPinTheme: defaultPinTheme,
-                  focusedPinTheme: focusedPinTheme,
-                  submittedPinTheme: submittedPinTheme,
-                  errorText: 'Incorrect',
-                  validator: (value) {
-                    if (state.status == VerificationStatus.error) {
-                      return 'Pin is incorrect';
-                    }
-                    return null;
-                  },
-                  pinputAutovalidateMode: PinputAutovalidateMode.onSubmit,
-                ),
-                const Gap(24),
-                Center(
-                  child: Builder(
-                    builder: (context) {
-                      if (state.status == VerificationStatus.loading) {
-                        return const CircularProgressIndicator.adaptive();
-                      }
+            return Padding(
+              padding: const EdgeInsets.all(24.0),
+              child: Column(
+                children: [
+                  const HeaderTitle(
+                    title: "Enter Verification Code",
+                    subtitle: "We've sent a 6-digit code to your phone",
+                  ),
 
-                      if (_canResend) {
-                        return TextButton(
-                          onPressed: () {
-                            _pinController.clear();
-                            verifyCubit.sendOTP(widget.phoneNumber);
-                          },
-                          child: Text(
-                            "Resend OTP",
-                            style: theme.textTheme.labelLarge?.copyWith(
-                              color: AppColors.primary,
+                  const Gap(32),
+
+                  // PIN Input
+                  Pinput(
+                    controller: _pinController,
+                    focusNode: _focusNode,
+                    length: 6,
+                    defaultPinTheme: defaultPinTheme,
+                    focusedPinTheme: focusedPinTheme,
+                    submittedPinTheme: submittedPinTheme,
+                    enabled: !isVerifying, // Disable during verification
+                    // ✅ Auto-submit when 6 digits are entered
+                    onCompleted: (pin) {
+                      verifyCubit.verifyOTP(pin);
+                    },
+
+                    // Show error styling if verification failed
+                    errorPinTheme: defaultPinTheme.copyWith(
+                      decoration: BoxDecoration(
+                        border: Border.all(color: Colors.red),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                    ),
+
+                    pinputAutovalidateMode: PinputAutovalidateMode.onSubmit,
+                  ),
+
+                  const Gap(24),
+
+                  // Loading indicator or resend button
+                  Center(
+                    child: Builder(
+                      builder: (context) {
+                        if (isVerifying) {
+                          return const CircularProgressIndicator.adaptive();
+                        }
+
+                        if (_canResend) {
+                          return TextButton(
+                            onPressed: () {
+                              _pinController.clear();
+                              verifyCubit.sendOTP(widget.phoneNumber);
+                            },
+                            child: Text(
+                              "Resend OTP",
+                              style: theme.textTheme.labelLarge?.copyWith(
+                                color: AppColors.primary,
+                                fontWeight: FontWeight.bold,
+                              ),
                             ),
+                          );
+                        }
+
+                        return Text(
+                          "Resend OTP in $_secondsRemaining seconds",
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                            color: Colors.grey,
                           ),
                         );
-                      }
-                      return Text(
-                        "Resend OTP in $_secondsRemaining seconds",
-                        style: theme.textTheme.bodyMedium?.copyWith(
-                          color: Colors.grey,
-                        ),
-                      );
-                    },
+                      },
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             );
           },
         ),

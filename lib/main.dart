@@ -7,8 +7,17 @@ import 'package:rain_check/firebase_options.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
+  // Initialize Firebase
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
 
-  await GoogleSignIn.instance.initialize();
-  runApp(MainApp(googleSignIn: GoogleSignIn.instance));
+  // ✅ Initialize GoogleSignIn with serverClientId
+  await GoogleSignIn.instance.initialize(
+    // Get this from your google-services.json file
+    serverClientId: DefaultFirebaseOptions
+        .currentPlatform
+        .iosClientId, // This works for both platforms
+  );
+
+  // Run the app
+  runApp(const MainApp());
 }

@@ -50,15 +50,16 @@ class _InputNumberScreenState extends State<InputNumberScreen> {
         backgroundColor: AppColors.background,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: AppColors.primary),
-          onPressed: () {
-            Navigator.pop(context);
-          },
+          onPressed: () => Navigator.pop(context),
         ),
       ),
       body: SafeArea(
         child: BlocConsumer<VerificationCubit, VerificationState>(
-          listener: (context, state) async {
-            if (state.errorMessage != null) {
+          // ✅ ONLY listen to state changes, don't check previous states
+          listener: (context, state) {
+            // Handle errors
+            if (state.status == VerificationStatus.error &&
+                state.errorMessage != null) {
               showSnackBar(
                 context,
                 message: state.errorMessage!,
@@ -66,44 +67,62 @@ class _InputNumberScreenState extends State<InputNumberScreen> {
               );
               return;
             }
-            if (state.status == VerificationStatus.otpSent &&
-                state.status != VerificationStatus.loading) {
+
+            // ✅ Navigate when OTP is successfully sent
+            if (state.status == VerificationStatus.otpSent) {
               showSnackBar(
                 context,
                 message: "OTP Successfully Sent",
                 type: SnackBarType.success,
               );
-              await Future.delayed(const Duration(seconds: 2));
-              if (context.mounted) {
-                context.router.replace(
-                  InputPinRoute(phoneNumber: mobileNumber),
-                );
-              }
+
+              // Navigate immediately after showing snackbar
+              Future.delayed(const Duration(milliseconds: 800), () {
+                if (context.mounted) {
+                  context.router.push(InputPinRoute(phoneNumber: mobileNumber));
+                }
+              });
+            }
+
+            // ✅ Handle phoneLinked status (if user already has phone linked)
+            if (state.status == VerificationStatus.phoneLinked) {
+              showSnackBar(
+                context,
+                message: "Phone number is already linked to an account",
+                type: SnackBarType.success,
+              );
+
+              Future.delayed(const Duration(milliseconds: 800), () {
+                if (context.mounted) {
+                  // Navigate to login or main app based on your flow
+                  context.router.push(MainAppRoute());
+                }
+              });
             }
           },
           builder: (context, state) {
+            final isLoading = state.status == VerificationStatus.loading;
+
             return KeyboardDismisser(
               child: Padding(
                 padding: const EdgeInsets.all(24.0),
                 child: ListView(
                   children: [
-                    HeaderTitle(
+                    const HeaderTitle(
                       title: "Verify your Phone",
                       subtitle:
                           "Please enter your details to receive a secure one time pin",
                     ),
-                    Gap(24),
+                    const Gap(24),
+
                     // Phone Number Input Field
                     IntlPhoneField(
+                      enabled: !isLoading, // Disable during loading
                       autofocus: true,
                       focusNode: focusNode,
                       decoration: InputDecoration(
                         hintStyle: theme.textTheme.bodyMedium,
                         labelText: 'Phone Number',
-                        helperStyle: theme.textTheme.bodyMedium,
-                        suffixStyle: theme.textTheme.bodyMedium,
-                        labelStyle: theme.textTheme.bodyMedium,
-                        floatingLabelStyle: theme.textTheme.bodyMedium,
                         border: const OutlineInputBorder(
                           borderSide: BorderSide(),
                           borderRadius: BorderRadius.all(Radius.circular(16)),
@@ -111,37 +130,38 @@ class _InputNumberScreenState extends State<InputNumberScreen> {
                       ),
                       initialCountryCode: 'PH',
                       onChanged: (phone) {
-                        var bool = phone.completeNumber.length < 13;
-                        if (phone.completeNumber.length == 13) {
+                        final isComplete = phone.completeNumber.length == 13;
+
+                        if (isComplete) {
                           focusNode.unfocus();
-                          return setState(() {
+                          setState(() {
                             allowToContinue = true;
                             mobileNumber = phone.completeNumber;
                           });
-                        }
-
-                        if (bool && allowToContinue) {
+                        } else if (allowToContinue) {
                           setState(() {
                             allowToContinue = false;
                           });
                         }
                       },
                     ),
-                    Visibility(
-                      visible: allowToContinue,
-                      child: SizedBox(
+
+                    const Gap(16),
+
+                    // Continue Button
+                    if (allowToContinue)
+                      SizedBox(
                         width: double.infinity,
                         child: AppElevatedButton(
-                          onPressed: () {
-                            context.read<VerificationCubit>().sendOTP(
-                              mobileNumber,
-                            );
-                          },
+                          onPressed: isLoading
+                              ? null
+                              : () => context.read<VerificationCubit>().sendOTP(
+                                  mobileNumber,
+                                ),
                           text: "CONTINUE",
-                          isLoading: state.status == VerificationStatus.loading,
+                          isLoading: isLoading,
                         ),
                       ),
-                    ),
                   ],
                 ),
               ),

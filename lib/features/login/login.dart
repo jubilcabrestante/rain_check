@@ -37,8 +37,53 @@ class _LoginScreenState extends State<LoginScreen> {
       body: SafeArea(
         child: BlocConsumer<AuthUserCubit, AuthUserState>(
           listener: (context, state) {
-            // TODO: implement listener
-            //
+            // Clear any previous errors
+            if (state.status == AuthStatus.loading) {
+              // Optionally show loading
+              return;
+            }
+
+            // Handle errors
+            if (state.status == AuthStatus.error && state.message != null) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(state.message!),
+                  backgroundColor: Colors.red,
+                  duration: const Duration(seconds: 3),
+                ),
+              );
+              return;
+            }
+
+            // ✅ Navigate ONLY when authenticated
+            if (state.status == AuthStatus.authenticated &&
+                state.currentUser != null) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text('Welcome, ${state.currentUser!.fullName}!'),
+                  backgroundColor: Colors.green,
+                  duration: const Duration(seconds: 2),
+                ),
+              );
+
+              // Navigate after a short delay
+              Future.delayed(const Duration(milliseconds: 500), () {
+                if (context.mounted) {
+                  context.router.replaceAll([MainAppRoute()]);
+                }
+              });
+            }
+
+            // Handle password reset
+            if (state.status == AuthStatus.passwordResetSent &&
+                state.message != null) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(state.message!),
+                  backgroundColor: Colors.blue,
+                ),
+              );
+            }
           },
           builder: (context, state) {
             final authUserCubit = context.read<AuthUserCubit>();
@@ -122,20 +167,23 @@ class _LoginScreenState extends State<LoginScreen> {
                           const Gap(24),
 
                           // Sign in
+                          // Sign in
                           AppElevatedButton(
                             text: 'Sign In',
                             color: AppColors.primary,
                             textColor: AppColors.textWhite,
                             isLoading: state.status == AuthStatus.loading,
-                            onPressed: () {
-                              if (_formKey.currentState!.validate()) {
-                                authUserCubit.login(
-                                  email: _textControllers[0].text,
-                                  password: _textControllers[1].text,
-                                );
-                                context.router.replaceAll([MainAppRoute()]);
-                              }
-                            },
+                            onPressed: state.status == AuthStatus.loading
+                                ? null
+                                : () {
+                                    if (_formKey.currentState!.validate()) {
+                                      authUserCubit.login(
+                                        email: _textControllers[0].text,
+                                        password: _textControllers[1].text,
+                                      );
+                                      // ✅ Don't navigate here! Let the listener handle it
+                                    }
+                                  },
                           ),
                           const Gap(32),
 
@@ -153,9 +201,13 @@ class _LoginScreenState extends State<LoginScreen> {
                               width: 20,
                               height: 20,
                             ),
-                            onPressed: () {
-                              authUserCubit.signInWithGoogle();
-                            },
+                            isLoading: state.status == AuthStatus.loading,
+                            onPressed: state.status == AuthStatus.loading
+                                ? null
+                                : () {
+                                    authUserCubit.signInWithGoogle();
+                                    // ✅ Don't navigate here! Let the listener handle it
+                                  },
                           ),
                           const Gap(16),
 

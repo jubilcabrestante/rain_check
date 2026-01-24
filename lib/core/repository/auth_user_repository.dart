@@ -14,6 +14,7 @@ class AuthUserRepository implements IAuthUserRepository {
   final FirebaseAuth auth;
   final GoogleSignIn googleSignIn;
   final FirebaseFirestore firestore;
+
   AuthUserRepository({
     required this.auth,
     required this.googleSignIn,
@@ -22,6 +23,7 @@ class AuthUserRepository implements IAuthUserRepository {
 
   final CollectionReference usersCollection = FirebaseFirestore.instance
       .collection('users');
+
   @override
   Stream<User?> authStream() => auth.authStateChanges();
 
@@ -62,15 +64,25 @@ class AuthUserRepository implements IAuthUserRepository {
     }
   }
 
-  // google sign in
+  // ✅ CORRECT Google Sign-In for v7.x
   @override
   ResultFuture<UserVM> signInWithGoogle() async {
     try {
-      // Sign out first to force account picker
-      await googleSignIn.signOut();
+      // Step 1: Authenticate using the NEW v7.x API
+      GoogleSignInAccount? googleUser;
 
-      // Check if platform supports authenticate()
-      if (!googleSignIn.supportsAuthenticate()) {
+      if (googleSignIn.supportsAuthenticate()) {
+        // ✅ Use authenticate() if available (most platforms)
+        try {
+          googleUser = await googleSignIn.authenticate();
+        } on GoogleSignInException catch (e) {
+          if (e.code == GoogleSignInExceptionCode.canceled) {
+            return Left(ApiFailure(errorMesage: 'Sign in was cancelled'));
+          }
+          return Left(ApiFailure(errorMesage: e.description ?? e.toString()));
+        }
+      } else {
+        // Fallback for platforms that don't support authenticate()
         return Left(
           ApiFailure(
             errorMesage: 'Google Sign-In not supported on this platform',
@@ -78,18 +90,31 @@ class AuthUserRepository implements IAuthUserRepository {
         );
       }
 
-      // Trigger authentication flow - THIS IS THE v7.x METHOD
-      final GoogleSignInAccount googleUser = await googleSignIn.authenticate();
+      // Step 2: Get authorization headers to extract tokens
+      const List<String> scopes = <String>[];
+      final Map<String, String>? headers = await googleUser.authorizationClient
+          .authorizationHeaders(scopes);
 
-      // Get authentication credentials
-      final GoogleSignInAuthentication googleAuth = googleUser.authentication;
+      if (headers == null) {
+        return Left(
+          ApiFailure(errorMesage: 'Failed to get authorization tokens'),
+        );
+      }
 
-      // Create Firebase credential
-      final credential = GoogleAuthProvider.credential(
-        idToken: googleAuth.idToken,
+      // Step 3: Extract the ID token from headers
+      final String? idToken = headers['Authorization']?.replaceFirst(
+        'Bearer ',
+        '',
       );
 
-      // Sign in to Firebase
+      if (idToken == null) {
+        return Left(ApiFailure(errorMesage: 'Failed to extract ID token'));
+      }
+
+      // Step 4: Create Firebase credential with ID token
+      final credential = GoogleAuthProvider.credential(idToken: idToken);
+
+      // Step 5: Sign in to Firebase
       final userCredential = await auth.signInWithCredential(credential);
       final firebaseUser = userCredential.user;
 
@@ -101,7 +126,7 @@ class AuthUserRepository implements IAuthUserRepository {
 
       log("User ID: ${firebaseUser.uid}");
 
-      // Check if user exists in Firestore
+      // Step 6: Check if user exists in Firestore
       final userDoc = await usersCollection.doc(firebaseUser.uid).get();
 
       if (userDoc.exists) {
@@ -114,15 +139,17 @@ class AuthUserRepository implements IAuthUserRepository {
         // New user - create document
         final newUser = UserVM(
           id: firebaseUser.uid,
-          fullName: googleUser.displayName ?? 'User',
+          fullName:
+              googleUser.displayName ?? firebaseUser.displayName ?? 'User',
           email: googleUser.email,
+          profilePictureUrl: googleUser.photoUrl ?? firebaseUser.photoURL,
         );
 
         await usersCollection.doc(newUser.id).set(newUser.toJson());
-
         return Right(newUser);
       }
     } on GoogleSignInException catch (e) {
+      log("Google Sign-In Exception: ${e.code} - ${e.description}");
       return Left(
         ApiFailure(errorMesage: e.description ?? 'Google sign-in failed'),
       );
@@ -138,7 +165,6 @@ class AuthUserRepository implements IAuthUserRepository {
   }
 
   // register
-  // for firebase authentication
   @override
   ResultFuture<User> registerWithEmailAndPassword({
     required String email,
@@ -196,18 +222,16 @@ class AuthUserRepository implements IAuthUserRepository {
   @override
   ResultVoid logout() async {
     try {
-      // sign out from firebase auth
       await auth.signOut();
-      // sign out from google
-      // await googleSignIn.signOut();
+      await googleSignIn.disconnect(); // ✅ Disconnect Google Sign-In
       return const Right(null);
     } catch (e) {
       return Left(ApiFailure(errorMesage: e.toString()));
     }
   }
 
-  // phone number sign in
-  // send phone number verification code
+  // ... rest of your phone verification code stays the same
+
   @override
   ResultFuture<String?> sendOTP(String phoneNumber) async {
     try {
@@ -240,24 +264,19 @@ class AuthUserRepository implements IAuthUserRepository {
       await auth.verifyPhoneNumber(
         phoneNumber: phoneNumber,
         timeout: const Duration(seconds: 120),
-
         verificationCompleted: (credential) async {
           final linkResult = await linkPhoneNumberToUser(credential);
-
           linkResult.fold(
             (failure) => completer.complete(Left(failure)),
             (_) => completer.complete(const Right(null)),
           );
         },
-
         verificationFailed: (e) {
           completer.complete(Left(ApiFailure(errorMesage: e.message)));
         },
-
         codeSent: (verificationId, _) {
           completer.complete(Right(verificationId));
         },
-
         codeAutoRetrievalTimeout: (verificationId) {
           completer.complete(Right(verificationId));
         },
@@ -296,23 +315,16 @@ class AuthUserRepository implements IAuthUserRepository {
           return const Left(
             ApiFailure(errorMesage: "Invalid OTP. Please try again."),
           );
-
         case "session-expired":
-          final currentUser = auth.currentUser;
-          if (currentUser?.phoneNumber != null) {
-            await sendOTP(currentUser!.phoneNumber!);
-          }
           return const Left(
             ApiFailure(
-              errorMesage: "OTP session expired. A new code was sent.",
+              errorMesage: "OTP session expired. Please request a new code.",
             ),
           );
-
         case "quota-exceeded":
           return const Left(
             ApiFailure(errorMesage: "Too many attempts. Try again later."),
           );
-
         default:
           return Left(ApiFailure(errorMesage: e.message));
       }
@@ -322,7 +334,6 @@ class AuthUserRepository implements IAuthUserRepository {
     }
   }
 
-  // link phone number to user
   ResultVoid linkPhoneNumberToUser(PhoneAuthCredential credential) async {
     try {
       final currentUser = auth.currentUser;
@@ -333,7 +344,6 @@ class AuthUserRepository implements IAuthUserRepository {
       }
 
       await currentUser.linkWithCredential(credential);
-
       log("Phone number linked successfully to user: ${currentUser.uid}");
       return const Right(null);
     } on FirebaseAuthException catch (e) {
@@ -341,7 +351,6 @@ class AuthUserRepository implements IAuthUserRepository {
         log("Phone number is already linked to this account.");
         return const Right(null);
       }
-
       return Left(ApiFailure(errorMesage: e.message));
     } catch (e) {
       log("Failed to link phone number: $e");
