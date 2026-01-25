@@ -1,3 +1,5 @@
+import 'dart:developer';
+
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -17,7 +19,8 @@ class MainAppScreen extends StatefulWidget {
   State<MainAppScreen> createState() => _MainAppScreenState();
 }
 
-class _MainAppScreenState extends State<MainAppScreen> {
+class _MainAppScreenState extends State<MainAppScreen>
+    with WidgetsBindingObserver {
   final String location = "";
 
   final List<_NavItem> navList = const [
@@ -37,6 +40,29 @@ class _MainAppScreenState extends State<MainAppScreen> {
       icon: Icons.water_drop,
     ),
   ];
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+
+    log("MainAppScreen initialized");
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    log("MainAppScreen disposed");
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    super.didChangeAppLifecycleState(state);
+    if (state == AppLifecycleState.resumed) {
+      log("App resumed");
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -110,6 +136,10 @@ class _MainAppScreenState extends State<MainAppScreen> {
                       return Padding(
                         padding: EdgeInsets.only(bottom: 10),
                         child: Container(
+                          padding: EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 8,
+                          ),
                           decoration: BoxDecoration(
                             color: AppColors.textWhite,
                             borderRadius: BorderRadius.circular(15),

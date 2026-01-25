@@ -5,9 +5,11 @@ enum AuthStatus {
   initial,
   loading,
   authenticated,
+  googleSignInLoading,
   unauthenticated,
   error,
-  success,
+  googleError,
+  successRegistration,
   passwordResetSent,
 }
 
@@ -16,6 +18,7 @@ abstract class AuthUserState with _$AuthUserState {
   const factory AuthUserState({
     @Default(AuthStatus.initial) AuthStatus status,
     UserVM? currentUser,
+    UserVM? user,
     String? message,
     String? verificationId,
   }) = _AuthUserState;

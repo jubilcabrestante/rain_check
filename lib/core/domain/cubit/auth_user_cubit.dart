@@ -12,6 +12,7 @@ part 'auth_user_cubit.freezed.dart';
 class AuthUserCubit extends Cubit<AuthUserState> {
   final IAuthUserRepository _repository;
   StreamSubscription<dynamic>? _authSubscription;
+  bool _isRegistering = false;
 
   AuthUserCubit(IAuthUserRepository repository)
     : _repository = repository,
@@ -21,35 +22,32 @@ class AuthUserCubit extends Cubit<AuthUserState> {
 
   /// Listen to Firebase Auth state changes
   void _listenToAuthChanges() {
-    _authSubscription = _repository.authStream().listen(
-      (user) async {
-        if (user == null) {
+    _authSubscription = _repository.authStream().listen((user) async {
+      if (user == null) {
+        emit(const AuthUserState(status: AuthStatus.unauthenticated));
+        return;
+      }
+
+      if (_isRegistering) {
+        return;
+      }
+
+      final result = await _repository.getUserDetails(user.uid);
+
+      result.fold(
+        (_) {
           emit(const AuthUserState(status: AuthStatus.unauthenticated));
-          return;
-        }
-
-        // User is authenticated, fetch their details
-        final result = await _repository.getUserDetails(user.uid);
-
-        result.fold(
-          (failure) => emit(
-            AuthUserState(
-              status: AuthStatus.error,
-              message: failure.errorMesage,
-            ),
-          ),
-          (userVM) => emit(
+        },
+        (userVM) {
+          emit(
             AuthUserState(
               status: AuthStatus.authenticated,
               currentUser: userVM,
             ),
-          ),
-        );
-      },
-      // onError: (error) => emit(
-      //   AuthUserState(status: AuthStatus.error, message: error.toString()),
-      // ),
-    );
+          );
+        },
+      );
+    });
   }
 
   /// Login with email and password
@@ -89,13 +87,16 @@ class AuthUserCubit extends Cubit<AuthUserState> {
 
   /// Sign in with Google
   Future<void> signInWithGoogle() async {
-    emit(state.copyWith(status: AuthStatus.loading, message: null));
+    emit(state.copyWith(status: AuthStatus.googleSignInLoading, message: null));
 
     final result = await _repository.signInWithGoogle();
 
     result.fold(
       (failure) => emit(
-        state.copyWith(status: AuthStatus.error, message: failure.errorMesage),
+        state.copyWith(
+          status: AuthStatus.googleError,
+          message: failure.errorMesage,
+        ),
       ),
       (userVM) => emit(
         state.copyWith(status: AuthStatus.authenticated, currentUser: userVM),
@@ -103,12 +104,12 @@ class AuthUserCubit extends Cubit<AuthUserState> {
     );
   }
 
-  /// Register with email and password
   Future<void> register({
     required String email,
     required String password,
     required String fullName,
   }) async {
+    _isRegistering = true; // ✅ Set flag
     emit(state.copyWith(status: AuthStatus.loading, message: null));
 
     final result = await _repository.registerWithEmailAndPassword(
@@ -117,25 +118,38 @@ class AuthUserCubit extends Cubit<AuthUserState> {
     );
 
     await result.fold(
-      (failure) async => emit(
-        state.copyWith(status: AuthStatus.error, message: failure.errorMesage),
-      ),
+      (failure) async {
+        _isRegistering = false; // ✅ Clear flag
+        emit(
+          state.copyWith(
+            status: AuthStatus.error,
+            message: failure.errorMesage,
+          ),
+        );
+      },
       (user) async {
-        // Create user document in Firestore
         final newUser = UserVM(id: user.uid, fullName: fullName, email: email);
-
         final addResult = await _repository.addUserDetails(newUser);
 
-        addResult.fold(
-          (failure) => emit(
-            state.copyWith(
-              status: AuthStatus.error,
-              message: failure.errorMesage,
-            ),
-          ),
-          (userVM) => emit(
-            state.copyWith(status: AuthStatus.success, currentUser: userVM),
-          ),
+        await addResult.fold(
+          (failure) async {
+            _isRegistering = false; // ✅ Clear flag
+            emit(
+              state.copyWith(
+                status: AuthStatus.error,
+                message: failure.errorMesage,
+              ),
+            );
+          },
+          (userVM) async {
+            _isRegistering = false; // ✅ Clear flag
+            emit(
+              state.copyWith(
+                status: AuthStatus.successRegistration,
+                message: 'Account created successfully!',
+              ),
+            );
+          },
         );
       },
     );

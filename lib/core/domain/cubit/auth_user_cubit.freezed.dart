@@ -14,7 +14,7 @@ T _$identity<T>(T value) => value;
 /// @nodoc
 mixin _$AuthUserState {
 
- AuthStatus get status; UserVM? get currentUser; String? get message; String? get verificationId;
+ AuthStatus get status; UserVM? get currentUser; UserVM? get user; String? get message; String? get verificationId;
 /// Create a copy of AuthUserState
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -25,16 +25,16 @@ $AuthUserStateCopyWith<AuthUserState> get copyWith => _$AuthUserStateCopyWithImp
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is AuthUserState&&(identical(other.status, status) || other.status == status)&&(identical(other.currentUser, currentUser) || other.currentUser == currentUser)&&(identical(other.message, message) || other.message == message)&&(identical(other.verificationId, verificationId) || other.verificationId == verificationId));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is AuthUserState&&(identical(other.status, status) || other.status == status)&&(identical(other.currentUser, currentUser) || other.currentUser == currentUser)&&(identical(other.user, user) || other.user == user)&&(identical(other.message, message) || other.message == message)&&(identical(other.verificationId, verificationId) || other.verificationId == verificationId));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,status,currentUser,message,verificationId);
+int get hashCode => Object.hash(runtimeType,status,currentUser,user,message,verificationId);
 
 @override
 String toString() {
-  return 'AuthUserState(status: $status, currentUser: $currentUser, message: $message, verificationId: $verificationId)';
+  return 'AuthUserState(status: $status, currentUser: $currentUser, user: $user, message: $message, verificationId: $verificationId)';
 }
 
 
@@ -45,11 +45,11 @@ abstract mixin class $AuthUserStateCopyWith<$Res>  {
   factory $AuthUserStateCopyWith(AuthUserState value, $Res Function(AuthUserState) _then) = _$AuthUserStateCopyWithImpl;
 @useResult
 $Res call({
- AuthStatus status, UserVM? currentUser, String? message, String? verificationId
+ AuthStatus status, UserVM? currentUser, UserVM? user, String? message, String? verificationId
 });
 
 
-$UserVMCopyWith<$Res>? get currentUser;
+$UserVMCopyWith<$Res>? get currentUser;$UserVMCopyWith<$Res>? get user;
 
 }
 /// @nodoc
@@ -62,10 +62,11 @@ class _$AuthUserStateCopyWithImpl<$Res>
 
 /// Create a copy of AuthUserState
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? status = null,Object? currentUser = freezed,Object? message = freezed,Object? verificationId = freezed,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? status = null,Object? currentUser = freezed,Object? user = freezed,Object? message = freezed,Object? verificationId = freezed,}) {
   return _then(_self.copyWith(
 status: null == status ? _self.status : status // ignore: cast_nullable_to_non_nullable
 as AuthStatus,currentUser: freezed == currentUser ? _self.currentUser : currentUser // ignore: cast_nullable_to_non_nullable
+as UserVM?,user: freezed == user ? _self.user : user // ignore: cast_nullable_to_non_nullable
 as UserVM?,message: freezed == message ? _self.message : message // ignore: cast_nullable_to_non_nullable
 as String?,verificationId: freezed == verificationId ? _self.verificationId : verificationId // ignore: cast_nullable_to_non_nullable
 as String?,
@@ -82,6 +83,18 @@ $UserVMCopyWith<$Res>? get currentUser {
 
   return $UserVMCopyWith<$Res>(_self.currentUser!, (value) {
     return _then(_self.copyWith(currentUser: value));
+  });
+}/// Create a copy of AuthUserState
+/// with the given fields replaced by the non-null parameter values.
+@override
+@pragma('vm:prefer-inline')
+$UserVMCopyWith<$Res>? get user {
+    if (_self.user == null) {
+    return null;
+  }
+
+  return $UserVMCopyWith<$Res>(_self.user!, (value) {
+    return _then(_self.copyWith(user: value));
   });
 }
 }
@@ -165,10 +178,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( AuthStatus status,  UserVM? currentUser,  String? message,  String? verificationId)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( AuthStatus status,  UserVM? currentUser,  UserVM? user,  String? message,  String? verificationId)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _AuthUserState() when $default != null:
-return $default(_that.status,_that.currentUser,_that.message,_that.verificationId);case _:
+return $default(_that.status,_that.currentUser,_that.user,_that.message,_that.verificationId);case _:
   return orElse();
 
 }
@@ -186,10 +199,10 @@ return $default(_that.status,_that.currentUser,_that.message,_that.verificationI
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( AuthStatus status,  UserVM? currentUser,  String? message,  String? verificationId)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( AuthStatus status,  UserVM? currentUser,  UserVM? user,  String? message,  String? verificationId)  $default,) {final _that = this;
 switch (_that) {
 case _AuthUserState():
-return $default(_that.status,_that.currentUser,_that.message,_that.verificationId);case _:
+return $default(_that.status,_that.currentUser,_that.user,_that.message,_that.verificationId);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -206,10 +219,10 @@ return $default(_that.status,_that.currentUser,_that.message,_that.verificationI
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( AuthStatus status,  UserVM? currentUser,  String? message,  String? verificationId)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( AuthStatus status,  UserVM? currentUser,  UserVM? user,  String? message,  String? verificationId)?  $default,) {final _that = this;
 switch (_that) {
 case _AuthUserState() when $default != null:
-return $default(_that.status,_that.currentUser,_that.message,_that.verificationId);case _:
+return $default(_that.status,_that.currentUser,_that.user,_that.message,_that.verificationId);case _:
   return null;
 
 }
@@ -221,11 +234,12 @@ return $default(_that.status,_that.currentUser,_that.message,_that.verificationI
 
 
 class _AuthUserState implements AuthUserState {
-  const _AuthUserState({this.status = AuthStatus.initial, this.currentUser, this.message, this.verificationId});
+  const _AuthUserState({this.status = AuthStatus.initial, this.currentUser, this.user, this.message, this.verificationId});
   
 
 @override@JsonKey() final  AuthStatus status;
 @override final  UserVM? currentUser;
+@override final  UserVM? user;
 @override final  String? message;
 @override final  String? verificationId;
 
@@ -239,16 +253,16 @@ _$AuthUserStateCopyWith<_AuthUserState> get copyWith => __$AuthUserStateCopyWith
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _AuthUserState&&(identical(other.status, status) || other.status == status)&&(identical(other.currentUser, currentUser) || other.currentUser == currentUser)&&(identical(other.message, message) || other.message == message)&&(identical(other.verificationId, verificationId) || other.verificationId == verificationId));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _AuthUserState&&(identical(other.status, status) || other.status == status)&&(identical(other.currentUser, currentUser) || other.currentUser == currentUser)&&(identical(other.user, user) || other.user == user)&&(identical(other.message, message) || other.message == message)&&(identical(other.verificationId, verificationId) || other.verificationId == verificationId));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,status,currentUser,message,verificationId);
+int get hashCode => Object.hash(runtimeType,status,currentUser,user,message,verificationId);
 
 @override
 String toString() {
-  return 'AuthUserState(status: $status, currentUser: $currentUser, message: $message, verificationId: $verificationId)';
+  return 'AuthUserState(status: $status, currentUser: $currentUser, user: $user, message: $message, verificationId: $verificationId)';
 }
 
 
@@ -259,11 +273,11 @@ abstract mixin class _$AuthUserStateCopyWith<$Res> implements $AuthUserStateCopy
   factory _$AuthUserStateCopyWith(_AuthUserState value, $Res Function(_AuthUserState) _then) = __$AuthUserStateCopyWithImpl;
 @override @useResult
 $Res call({
- AuthStatus status, UserVM? currentUser, String? message, String? verificationId
+ AuthStatus status, UserVM? currentUser, UserVM? user, String? message, String? verificationId
 });
 
 
-@override $UserVMCopyWith<$Res>? get currentUser;
+@override $UserVMCopyWith<$Res>? get currentUser;@override $UserVMCopyWith<$Res>? get user;
 
 }
 /// @nodoc
@@ -276,10 +290,11 @@ class __$AuthUserStateCopyWithImpl<$Res>
 
 /// Create a copy of AuthUserState
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? status = null,Object? currentUser = freezed,Object? message = freezed,Object? verificationId = freezed,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? status = null,Object? currentUser = freezed,Object? user = freezed,Object? message = freezed,Object? verificationId = freezed,}) {
   return _then(_AuthUserState(
 status: null == status ? _self.status : status // ignore: cast_nullable_to_non_nullable
 as AuthStatus,currentUser: freezed == currentUser ? _self.currentUser : currentUser // ignore: cast_nullable_to_non_nullable
+as UserVM?,user: freezed == user ? _self.user : user // ignore: cast_nullable_to_non_nullable
 as UserVM?,message: freezed == message ? _self.message : message // ignore: cast_nullable_to_non_nullable
 as String?,verificationId: freezed == verificationId ? _self.verificationId : verificationId // ignore: cast_nullable_to_non_nullable
 as String?,
@@ -297,6 +312,18 @@ $UserVMCopyWith<$Res>? get currentUser {
 
   return $UserVMCopyWith<$Res>(_self.currentUser!, (value) {
     return _then(_self.copyWith(currentUser: value));
+  });
+}/// Create a copy of AuthUserState
+/// with the given fields replaced by the non-null parameter values.
+@override
+@pragma('vm:prefer-inline')
+$UserVMCopyWith<$Res>? get user {
+    if (_self.user == null) {
+    return null;
+  }
+
+  return $UserVMCopyWith<$Res>(_self.user!, (value) {
+    return _then(_self.copyWith(user: value));
   });
 }
 }

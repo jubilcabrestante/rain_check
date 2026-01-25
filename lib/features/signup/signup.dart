@@ -46,7 +46,7 @@ class _SignupScreenState extends State<SignupScreen> {
               listener: (context, state) {
                 // TODO: implement listener
                 // successfull
-                if (state.status == AuthStatus.success) {
+                if (state.status == AuthStatus.successRegistration) {
                   showSnackBar(
                     context,
                     message: "Success creating an account",
@@ -56,7 +56,6 @@ class _SignupScreenState extends State<SignupScreen> {
                   for (var controller in _textControllers) {
                     controller.clear();
                   }
-
                   context.router.popAndPush(LoginRoute());
                 }
 

@@ -38,22 +38,23 @@ class _LoginScreenState extends State<LoginScreen> {
         child: BlocConsumer<AuthUserCubit, AuthUserState>(
           listener: (context, state) {
             // Clear any previous errors
-            if (state.status == AuthStatus.loading) {
-              // Optionally show loading
-              return;
-            }
-
-            // Handle errors
-            // if (state.status == AuthStatus.error && state.message != null) {
-            //   ScaffoldMessenger.of(context).showSnackBar(
-            //     SnackBar(
-            //       content: Text(state.message!),
-            //       backgroundColor: Colors.red,
-            //       duration: const Duration(seconds: 3),
-            //     ),
-            //   );
+            // if (state.status == AuthStatus.loading ||
+            //     state.status == AuthStatus.googleSignInLoading) {
+            //   // Optionally show loading
             //   return;
             // }
+
+            // Handle errors
+            if (state.status == AuthStatus.error && state.message != null) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(state.message!),
+                  backgroundColor: Colors.red,
+                  duration: const Duration(seconds: 3),
+                ),
+              );
+              return;
+            }
 
             // ✅ Navigate ONLY when authenticated
             if (state.status == AuthStatus.authenticated &&
@@ -201,12 +202,13 @@ class _LoginScreenState extends State<LoginScreen> {
                               width: 20,
                               height: 20,
                             ),
-                            isLoading: state.status == AuthStatus.loading,
-                            onPressed: state.status == AuthStatus.loading
+                            isLoading:
+                                state.status == AuthStatus.googleSignInLoading,
+                            onPressed:
+                                state.status == AuthStatus.googleSignInLoading
                                 ? null
                                 : () {
                                     authUserCubit.signInWithGoogle();
-                                    // ✅ Don't navigate here! Let the listener handle it
                                   },
                           ),
                           const Gap(16),
