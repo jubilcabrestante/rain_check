@@ -4,11 +4,11 @@ import 'package:google_sign_in/google_sign_in.dart';
 import 'package:rain_check/app/app.dart';
 import 'package:rain_check/firebase_options.dart';
 
-void main() async {
+Future<void> firebaseMain(FirebaseOptions firebaseOptions) async {
   WidgetsFlutterBinding.ensureInitialized();
 
   // Initialize Firebase
-  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+  await Firebase.initializeApp(options: firebaseOptions);
 
   // ✅ Initialize GoogleSignIn with serverClientId
   await GoogleSignIn.instance.initialize(

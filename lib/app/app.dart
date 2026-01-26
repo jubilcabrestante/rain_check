@@ -76,6 +76,8 @@ class _MainAppState extends State<MainApp> {
           debugShowCheckedModeBanner: false,
           title: 'Rain Check',
           theme: themeData.lightTheme,
+          // TODO: Fix the dark theme
+          // darkTheme: themeData.darkTheme,
           routerConfig: _appRouter.config(
             includePrefixMatches: true,
             navigatorObservers: () => <NavigatorObserver>[AutoRouteObserver()],

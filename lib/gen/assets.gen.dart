@@ -11,6 +11,19 @@
 
 import 'package:flutter/widgets.dart';
 
+class $AssetsGeojsonGen {
+  const $AssetsGeojsonGen();
+
+  /// File path: assets/geojson/ppc_boundaries.geojson
+  String get ppcBoundaries => 'assets/geojson/ppc_boundaries.geojson';
+
+  /// File path: assets/geojson/ppc_flooding_area.geojson
+  String get ppcFloodingArea => 'assets/geojson/ppc_flooding_area.geojson';
+
+  /// List of all assets
+  List<String> get values => [ppcBoundaries, ppcFloodingArea];
+}
+
 class $AssetsImagesGen {
   const $AssetsImagesGen();
 
@@ -31,6 +44,7 @@ class $AssetsImagesGen {
 class Assets {
   const Assets._();
 
+  static const $AssetsGeojsonGen geojson = $AssetsGeojsonGen();
   static const $AssetsImagesGen images = $AssetsImagesGen();
 }
 

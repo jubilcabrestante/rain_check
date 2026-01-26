@@ -11,12 +11,9 @@ plugins {
 val keystoreProperties = Properties()
 val keystoreFile = rootProject.file("key.properties")
 
-// Load properties if file exists
 if (keystoreFile.exists()) {
     keystoreProperties.load(FileInputStream(keystoreFile))
     println("Keystore properties loaded successfully")
-} else {
-    println("key.properties file not found!")
 }
 
 android {
@@ -57,14 +54,22 @@ android {
             signingConfig = signingConfigs.getByName("release")
             isMinifyEnabled = false
             isShrinkResources = false
-            // proguardFiles(
-            //     getDefaultProguardFile("proguard-android-optimize.txt"),
-            //     "proguard-rules.pro"
-            // )
         }
+    }
 
-        getByName("debug") {
-            signingConfig = signingConfigs.getByName("debug")
+    // ✅ KTS-correct flavor setup
+    flavorDimensions += "default"
+
+    productFlavors {
+    //    create("prod") {
+    //        dimension = "default"
+    //        resValue("string", "app_name", "Rain Check")
+    //    }
+
+        create("dev") {
+            dimension = "default"
+    //        applicationIdSuffix = ".dev"
+            resValue("string", "app_name", "Rain Check Dev")
         }
     }
 }

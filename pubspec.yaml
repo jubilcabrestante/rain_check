@@ -35,6 +35,7 @@ dependencies:
   logger: ^2.6.2
   freezed_annotation: ^3.1.0
   intl_phone_field: ^3.2.0
+  flutter_launcher_icons: ^0.14.4
 
 dev_dependencies:
   flutter_test:
@@ -43,18 +44,16 @@ dev_dependencies:
   flutter_lints: ^5.0.0
   build_runner: ^2.10.5
   flutter_gen_runner: ^5.12.0
+  flutter_flavorizr: ^2.4.1
 
 # FlutterGen Configuration
 flutter_gen:
   output: lib/gen/
   line_length: 80
-  
   integrations:
     flutter_svg: false
-    
   fonts:
-    enabled: true  # THIS IS CRUCIAL!
-  
+    enabled: true
   assets:
     enabled: true
 
@@ -67,11 +66,34 @@ flutter:
     - assets/images/logo.png
     - assets/images/logo-blue.png
     - assets/images/google.png
+    - assets/geojson/ppc_boundaries.geojson
+    - assets/geojson/ppc_flooding_area.geojson
 
-  # Fonts - MUST BE INSIDE THE flutter: SECTION
+  # Fonts
   fonts:
     - family: PlusJakartaSans
       fonts:
         - asset: assets/fonts/PlusJakartaSans-Regular.ttf
         - asset: assets/fonts/PlusJakartaSans-Bold.ttf
           weight: 700
+
+# Flutter Launcher Icons (only ONE section, at root)
+flutter_launcher_icons:
+  android: "launcher_icon"
+  ios: true
+  image_path: "assets/images/logo-blue.png"
+  adaptive_icon_background: "#FFFFFF"
+  adaptive_icon_foreground: "assets/images/logo-blue.png"
+
+  # min_sdk_android: 21 # android min sdk min:16, default 21
+  # web:
+  #   generate: true
+  #   image_path: "path/to/image.png"
+  #   background_color: "#hexcode"
+  #   theme_color: "#hexcode"
+  # windows:
+  #   generate: true
+  #   image_path: "path/to/image.png"
+  #   icon_size: 48 # min:48, max:256, default: 48
+  # macos:
+  #   generate: true
