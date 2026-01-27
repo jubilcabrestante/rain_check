@@ -9,6 +9,8 @@ import 'package:rain_check/app/themes/themes.dart';
 import 'package:rain_check/core/domain/cubit/auth_user_cubit.dart';
 import 'package:rain_check/core/domain/i_auth_user_repository.dart';
 import 'package:rain_check/core/repository/auth_user_repository.dart';
+import 'package:rain_check/features/calculate/domain/cubit/calculate_cubit.dart';
+import 'package:rain_check/features/calculate/flood_data_service.dart';
 import 'package:rain_check/features/otp_verification/domain/cubit/verification_cubit.dart';
 import 'package:responsive_framework/responsive_framework.dart';
 
@@ -25,6 +27,7 @@ class _MainAppState extends State<MainApp> {
   late IAuthUserRepository authUserRepository;
   late AuthUserCubit _authUserCubit;
   late VerificationCubit _verificationCubit;
+  late CalculateCubit _calculateCubit;
 
   @override
   void initState() {
@@ -34,7 +37,7 @@ class _MainAppState extends State<MainApp> {
     final firebaseAuth = FirebaseAuth.instance;
     final firestore = FirebaseFirestore.instance;
     final googleSignIn = GoogleSignIn.instance; // ✅ Use the singleton instance
-
+    final floodData = FloodDataService();
     // Initialize repository
     authUserRepository = AuthUserRepository(
       auth: firebaseAuth,
@@ -48,6 +51,7 @@ class _MainAppState extends State<MainApp> {
       iAuthUserRepository: authUserRepository,
       authUserCubit: _authUserCubit,
     );
+    _calculateCubit = CalculateCubit(service: floodData);
   }
 
   @override
@@ -71,6 +75,7 @@ class _MainAppState extends State<MainApp> {
         providers: [
           BlocProvider<AuthUserCubit>.value(value: _authUserCubit),
           BlocProvider<VerificationCubit>.value(value: _verificationCubit),
+          BlocProvider<CalculateCubit>.value(value: _calculateCubit),
         ],
         child: MaterialApp.router(
           debugShowCheckedModeBanner: false,

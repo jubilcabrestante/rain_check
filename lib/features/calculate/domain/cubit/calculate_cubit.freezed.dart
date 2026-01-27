@@ -14,7 +14,7 @@ T _$identity<T>(T value) => value;
 /// @nodoc
 mixin _$CalculateState {
 
- bool get loading; String? get location; String? get rainAmount; String? get errorMessage;
+ bool get loadingBarangays; bool get calculating; List<String> get barangays; String? get selectedBarangay; RainfallIntensity? get selectedIntensity; FloodCalculationResult? get result; String? get errorMessage;
 /// Create a copy of CalculateState
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -25,16 +25,16 @@ $CalculateStateCopyWith<CalculateState> get copyWith => _$CalculateStateCopyWith
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is CalculateState&&(identical(other.loading, loading) || other.loading == loading)&&(identical(other.location, location) || other.location == location)&&(identical(other.rainAmount, rainAmount) || other.rainAmount == rainAmount)&&(identical(other.errorMessage, errorMessage) || other.errorMessage == errorMessage));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is CalculateState&&(identical(other.loadingBarangays, loadingBarangays) || other.loadingBarangays == loadingBarangays)&&(identical(other.calculating, calculating) || other.calculating == calculating)&&const DeepCollectionEquality().equals(other.barangays, barangays)&&(identical(other.selectedBarangay, selectedBarangay) || other.selectedBarangay == selectedBarangay)&&(identical(other.selectedIntensity, selectedIntensity) || other.selectedIntensity == selectedIntensity)&&(identical(other.result, result) || other.result == result)&&(identical(other.errorMessage, errorMessage) || other.errorMessage == errorMessage));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,loading,location,rainAmount,errorMessage);
+int get hashCode => Object.hash(runtimeType,loadingBarangays,calculating,const DeepCollectionEquality().hash(barangays),selectedBarangay,selectedIntensity,result,errorMessage);
 
 @override
 String toString() {
-  return 'CalculateState(loading: $loading, location: $location, rainAmount: $rainAmount, errorMessage: $errorMessage)';
+  return 'CalculateState(loadingBarangays: $loadingBarangays, calculating: $calculating, barangays: $barangays, selectedBarangay: $selectedBarangay, selectedIntensity: $selectedIntensity, result: $result, errorMessage: $errorMessage)';
 }
 
 
@@ -45,7 +45,7 @@ abstract mixin class $CalculateStateCopyWith<$Res>  {
   factory $CalculateStateCopyWith(CalculateState value, $Res Function(CalculateState) _then) = _$CalculateStateCopyWithImpl;
 @useResult
 $Res call({
- bool loading, String? location, String? rainAmount, String? errorMessage
+ bool loadingBarangays, bool calculating, List<String> barangays, String? selectedBarangay, RainfallIntensity? selectedIntensity, FloodCalculationResult? result, String? errorMessage
 });
 
 
@@ -62,12 +62,15 @@ class _$CalculateStateCopyWithImpl<$Res>
 
 /// Create a copy of CalculateState
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? loading = null,Object? location = freezed,Object? rainAmount = freezed,Object? errorMessage = freezed,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? loadingBarangays = null,Object? calculating = null,Object? barangays = null,Object? selectedBarangay = freezed,Object? selectedIntensity = freezed,Object? result = freezed,Object? errorMessage = freezed,}) {
   return _then(_self.copyWith(
-loading: null == loading ? _self.loading : loading // ignore: cast_nullable_to_non_nullable
-as bool,location: freezed == location ? _self.location : location // ignore: cast_nullable_to_non_nullable
-as String?,rainAmount: freezed == rainAmount ? _self.rainAmount : rainAmount // ignore: cast_nullable_to_non_nullable
-as String?,errorMessage: freezed == errorMessage ? _self.errorMessage : errorMessage // ignore: cast_nullable_to_non_nullable
+loadingBarangays: null == loadingBarangays ? _self.loadingBarangays : loadingBarangays // ignore: cast_nullable_to_non_nullable
+as bool,calculating: null == calculating ? _self.calculating : calculating // ignore: cast_nullable_to_non_nullable
+as bool,barangays: null == barangays ? _self.barangays : barangays // ignore: cast_nullable_to_non_nullable
+as List<String>,selectedBarangay: freezed == selectedBarangay ? _self.selectedBarangay : selectedBarangay // ignore: cast_nullable_to_non_nullable
+as String?,selectedIntensity: freezed == selectedIntensity ? _self.selectedIntensity : selectedIntensity // ignore: cast_nullable_to_non_nullable
+as RainfallIntensity?,result: freezed == result ? _self.result : result // ignore: cast_nullable_to_non_nullable
+as FloodCalculationResult?,errorMessage: freezed == errorMessage ? _self.errorMessage : errorMessage // ignore: cast_nullable_to_non_nullable
 as String?,
   ));
 }
@@ -89,10 +92,10 @@ extension CalculateStatePatterns on CalculateState {
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeMap<TResult extends Object?>(TResult Function( _Initial value)?  $default,{required TResult orElse(),}){
+@optionalTypeArgs TResult maybeMap<TResult extends Object?>(TResult Function( _CalculateState value)?  $default,{required TResult orElse(),}){
 final _that = this;
 switch (_that) {
-case _Initial() when $default != null:
+case _CalculateState() when $default != null:
 return $default(_that);case _:
   return orElse();
 
@@ -111,10 +114,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult map<TResult extends Object?>(TResult Function( _Initial value)  $default,){
+@optionalTypeArgs TResult map<TResult extends Object?>(TResult Function( _CalculateState value)  $default,){
 final _that = this;
 switch (_that) {
-case _Initial():
+case _CalculateState():
 return $default(_that);case _:
   throw StateError('Unexpected subclass');
 
@@ -132,10 +135,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>(TResult? Function( _Initial value)?  $default,){
+@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>(TResult? Function( _CalculateState value)?  $default,){
 final _that = this;
 switch (_that) {
-case _Initial() when $default != null:
+case _CalculateState() when $default != null:
 return $default(_that);case _:
   return null;
 
@@ -153,10 +156,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( bool loading,  String? location,  String? rainAmount,  String? errorMessage)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( bool loadingBarangays,  bool calculating,  List<String> barangays,  String? selectedBarangay,  RainfallIntensity? selectedIntensity,  FloodCalculationResult? result,  String? errorMessage)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
-case _Initial() when $default != null:
-return $default(_that.loading,_that.location,_that.rainAmount,_that.errorMessage);case _:
+case _CalculateState() when $default != null:
+return $default(_that.loadingBarangays,_that.calculating,_that.barangays,_that.selectedBarangay,_that.selectedIntensity,_that.result,_that.errorMessage);case _:
   return orElse();
 
 }
@@ -174,10 +177,10 @@ return $default(_that.loading,_that.location,_that.rainAmount,_that.errorMessage
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( bool loading,  String? location,  String? rainAmount,  String? errorMessage)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( bool loadingBarangays,  bool calculating,  List<String> barangays,  String? selectedBarangay,  RainfallIntensity? selectedIntensity,  FloodCalculationResult? result,  String? errorMessage)  $default,) {final _that = this;
 switch (_that) {
-case _Initial():
-return $default(_that.loading,_that.location,_that.rainAmount,_that.errorMessage);case _:
+case _CalculateState():
+return $default(_that.loadingBarangays,_that.calculating,_that.barangays,_that.selectedBarangay,_that.selectedIntensity,_that.result,_that.errorMessage);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -194,10 +197,10 @@ return $default(_that.loading,_that.location,_that.rainAmount,_that.errorMessage
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( bool loading,  String? location,  String? rainAmount,  String? errorMessage)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( bool loadingBarangays,  bool calculating,  List<String> barangays,  String? selectedBarangay,  RainfallIntensity? selectedIntensity,  FloodCalculationResult? result,  String? errorMessage)?  $default,) {final _that = this;
 switch (_that) {
-case _Initial() when $default != null:
-return $default(_that.loading,_that.location,_that.rainAmount,_that.errorMessage);case _:
+case _CalculateState() when $default != null:
+return $default(_that.loadingBarangays,_that.calculating,_that.barangays,_that.selectedBarangay,_that.selectedIntensity,_that.result,_that.errorMessage);case _:
   return null;
 
 }
@@ -208,46 +211,55 @@ return $default(_that.loading,_that.location,_that.rainAmount,_that.errorMessage
 /// @nodoc
 
 
-class _Initial implements CalculateState {
-  const _Initial({this.loading = false, this.location, this.rainAmount, this.errorMessage});
+class _CalculateState implements CalculateState {
+  const _CalculateState({this.loadingBarangays = false, this.calculating = false, final  List<String> barangays = const [], this.selectedBarangay, this.selectedIntensity, this.result, this.errorMessage}): _barangays = barangays;
   
 
-@override@JsonKey() final  bool loading;
-@override final  String? location;
-@override final  String? rainAmount;
+@override@JsonKey() final  bool loadingBarangays;
+@override@JsonKey() final  bool calculating;
+ final  List<String> _barangays;
+@override@JsonKey() List<String> get barangays {
+  if (_barangays is EqualUnmodifiableListView) return _barangays;
+  // ignore: implicit_dynamic_type
+  return EqualUnmodifiableListView(_barangays);
+}
+
+@override final  String? selectedBarangay;
+@override final  RainfallIntensity? selectedIntensity;
+@override final  FloodCalculationResult? result;
 @override final  String? errorMessage;
 
 /// Create a copy of CalculateState
 /// with the given fields replaced by the non-null parameter values.
 @override @JsonKey(includeFromJson: false, includeToJson: false)
 @pragma('vm:prefer-inline')
-_$InitialCopyWith<_Initial> get copyWith => __$InitialCopyWithImpl<_Initial>(this, _$identity);
+_$CalculateStateCopyWith<_CalculateState> get copyWith => __$CalculateStateCopyWithImpl<_CalculateState>(this, _$identity);
 
 
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _Initial&&(identical(other.loading, loading) || other.loading == loading)&&(identical(other.location, location) || other.location == location)&&(identical(other.rainAmount, rainAmount) || other.rainAmount == rainAmount)&&(identical(other.errorMessage, errorMessage) || other.errorMessage == errorMessage));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _CalculateState&&(identical(other.loadingBarangays, loadingBarangays) || other.loadingBarangays == loadingBarangays)&&(identical(other.calculating, calculating) || other.calculating == calculating)&&const DeepCollectionEquality().equals(other._barangays, _barangays)&&(identical(other.selectedBarangay, selectedBarangay) || other.selectedBarangay == selectedBarangay)&&(identical(other.selectedIntensity, selectedIntensity) || other.selectedIntensity == selectedIntensity)&&(identical(other.result, result) || other.result == result)&&(identical(other.errorMessage, errorMessage) || other.errorMessage == errorMessage));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,loading,location,rainAmount,errorMessage);
+int get hashCode => Object.hash(runtimeType,loadingBarangays,calculating,const DeepCollectionEquality().hash(_barangays),selectedBarangay,selectedIntensity,result,errorMessage);
 
 @override
 String toString() {
-  return 'CalculateState(loading: $loading, location: $location, rainAmount: $rainAmount, errorMessage: $errorMessage)';
+  return 'CalculateState(loadingBarangays: $loadingBarangays, calculating: $calculating, barangays: $barangays, selectedBarangay: $selectedBarangay, selectedIntensity: $selectedIntensity, result: $result, errorMessage: $errorMessage)';
 }
 
 
 }
 
 /// @nodoc
-abstract mixin class _$InitialCopyWith<$Res> implements $CalculateStateCopyWith<$Res> {
-  factory _$InitialCopyWith(_Initial value, $Res Function(_Initial) _then) = __$InitialCopyWithImpl;
+abstract mixin class _$CalculateStateCopyWith<$Res> implements $CalculateStateCopyWith<$Res> {
+  factory _$CalculateStateCopyWith(_CalculateState value, $Res Function(_CalculateState) _then) = __$CalculateStateCopyWithImpl;
 @override @useResult
 $Res call({
- bool loading, String? location, String? rainAmount, String? errorMessage
+ bool loadingBarangays, bool calculating, List<String> barangays, String? selectedBarangay, RainfallIntensity? selectedIntensity, FloodCalculationResult? result, String? errorMessage
 });
 
 
@@ -255,21 +267,24 @@ $Res call({
 
 }
 /// @nodoc
-class __$InitialCopyWithImpl<$Res>
-    implements _$InitialCopyWith<$Res> {
-  __$InitialCopyWithImpl(this._self, this._then);
+class __$CalculateStateCopyWithImpl<$Res>
+    implements _$CalculateStateCopyWith<$Res> {
+  __$CalculateStateCopyWithImpl(this._self, this._then);
 
-  final _Initial _self;
-  final $Res Function(_Initial) _then;
+  final _CalculateState _self;
+  final $Res Function(_CalculateState) _then;
 
 /// Create a copy of CalculateState
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? loading = null,Object? location = freezed,Object? rainAmount = freezed,Object? errorMessage = freezed,}) {
-  return _then(_Initial(
-loading: null == loading ? _self.loading : loading // ignore: cast_nullable_to_non_nullable
-as bool,location: freezed == location ? _self.location : location // ignore: cast_nullable_to_non_nullable
-as String?,rainAmount: freezed == rainAmount ? _self.rainAmount : rainAmount // ignore: cast_nullable_to_non_nullable
-as String?,errorMessage: freezed == errorMessage ? _self.errorMessage : errorMessage // ignore: cast_nullable_to_non_nullable
+@override @pragma('vm:prefer-inline') $Res call({Object? loadingBarangays = null,Object? calculating = null,Object? barangays = null,Object? selectedBarangay = freezed,Object? selectedIntensity = freezed,Object? result = freezed,Object? errorMessage = freezed,}) {
+  return _then(_CalculateState(
+loadingBarangays: null == loadingBarangays ? _self.loadingBarangays : loadingBarangays // ignore: cast_nullable_to_non_nullable
+as bool,calculating: null == calculating ? _self.calculating : calculating // ignore: cast_nullable_to_non_nullable
+as bool,barangays: null == barangays ? _self._barangays : barangays // ignore: cast_nullable_to_non_nullable
+as List<String>,selectedBarangay: freezed == selectedBarangay ? _self.selectedBarangay : selectedBarangay // ignore: cast_nullable_to_non_nullable
+as String?,selectedIntensity: freezed == selectedIntensity ? _self.selectedIntensity : selectedIntensity // ignore: cast_nullable_to_non_nullable
+as RainfallIntensity?,result: freezed == result ? _self.result : result // ignore: cast_nullable_to_non_nullable
+as FloodCalculationResult?,errorMessage: freezed == errorMessage ? _self.errorMessage : errorMessage // ignore: cast_nullable_to_non_nullable
 as String?,
   ));
 }

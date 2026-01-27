@@ -66,8 +66,8 @@ flutter:
     - assets/images/logo.png
     - assets/images/logo-blue.png
     - assets/images/google.png
-    - assets/geojson/ppc_boundaries.geojson
-    - assets/geojson/ppc_flooding_area.geojson
+    - assets/data/ppc_boundaries.geojson
+    - assets/data/ppc_flooding_area.geojson
 
   # Fonts
   fonts:

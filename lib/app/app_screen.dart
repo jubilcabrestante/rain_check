@@ -8,7 +8,6 @@ import 'package:rain_check/app/logout_dialog.dart';
 import 'package:rain_check/app/router/router.gr.dart';
 import 'package:rain_check/app/themes/colors.dart';
 import 'package:rain_check/core/domain/cubit/auth_user_cubit.dart';
-import 'package:rain_check/core/enum/rain_amount.dart';
 import 'package:rain_check/core/utils/name_formatter.dart';
 
 @RoutePage()
@@ -196,7 +195,7 @@ class _WeatherHeaderState extends State<_WeatherHeader> {
     var chanceOfRain = 20;
 
     // light, moderate and heavy
-    var rainAmount = RainAmount.low;
+    var rainAmount = "";
 
     final theme = Theme.of(context);
 
