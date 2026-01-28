@@ -52,8 +52,21 @@ app.*.map.json
 /android/app/src/main/
 /android/kotlin/
 
+
+# Only use android or ios
+/web/
+/macos/
+/linux/
+
 firebase.json
 
 /lib/firebase_options.dart
 android/app/src/devDebug/google-services.json
 android/app/src/devRelease/google-services.json
+
+# FVM Version Cache
+.fvm/
+.fvmrc
+
+pubspec.lock
+/.vscode/settings.json
