@@ -14,7 +14,8 @@ T _$identity<T>(T value) => value;
 /// @nodoc
 mixin _$CalculateState {
 
- bool get loadingBarangays; bool get calculating; List<String> get barangays; String? get selectedBarangay; RainfallIntensity? get selectedIntensity; FloodCalculationResult? get result; String? get errorMessage;
+ bool get loadingBarangays; bool get calculating; List<String> get barangays; String? get selectedBarangay; RainfallIntensity? get selectedIntensity; LogisticFloodResult? get result;// ✅ CHANGED from FloodCalculationResult
+ String? get errorMessage;
 /// Create a copy of CalculateState
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -45,7 +46,7 @@ abstract mixin class $CalculateStateCopyWith<$Res>  {
   factory $CalculateStateCopyWith(CalculateState value, $Res Function(CalculateState) _then) = _$CalculateStateCopyWithImpl;
 @useResult
 $Res call({
- bool loadingBarangays, bool calculating, List<String> barangays, String? selectedBarangay, RainfallIntensity? selectedIntensity, FloodCalculationResult? result, String? errorMessage
+ bool loadingBarangays, bool calculating, List<String> barangays, String? selectedBarangay, RainfallIntensity? selectedIntensity, LogisticFloodResult? result, String? errorMessage
 });
 
 
@@ -70,7 +71,7 @@ as bool,barangays: null == barangays ? _self.barangays : barangays // ignore: ca
 as List<String>,selectedBarangay: freezed == selectedBarangay ? _self.selectedBarangay : selectedBarangay // ignore: cast_nullable_to_non_nullable
 as String?,selectedIntensity: freezed == selectedIntensity ? _self.selectedIntensity : selectedIntensity // ignore: cast_nullable_to_non_nullable
 as RainfallIntensity?,result: freezed == result ? _self.result : result // ignore: cast_nullable_to_non_nullable
-as FloodCalculationResult?,errorMessage: freezed == errorMessage ? _self.errorMessage : errorMessage // ignore: cast_nullable_to_non_nullable
+as LogisticFloodResult?,errorMessage: freezed == errorMessage ? _self.errorMessage : errorMessage // ignore: cast_nullable_to_non_nullable
 as String?,
   ));
 }
@@ -156,7 +157,7 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( bool loadingBarangays,  bool calculating,  List<String> barangays,  String? selectedBarangay,  RainfallIntensity? selectedIntensity,  FloodCalculationResult? result,  String? errorMessage)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( bool loadingBarangays,  bool calculating,  List<String> barangays,  String? selectedBarangay,  RainfallIntensity? selectedIntensity,  LogisticFloodResult? result,  String? errorMessage)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _CalculateState() when $default != null:
 return $default(_that.loadingBarangays,_that.calculating,_that.barangays,_that.selectedBarangay,_that.selectedIntensity,_that.result,_that.errorMessage);case _:
@@ -177,7 +178,7 @@ return $default(_that.loadingBarangays,_that.calculating,_that.barangays,_that.s
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( bool loadingBarangays,  bool calculating,  List<String> barangays,  String? selectedBarangay,  RainfallIntensity? selectedIntensity,  FloodCalculationResult? result,  String? errorMessage)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( bool loadingBarangays,  bool calculating,  List<String> barangays,  String? selectedBarangay,  RainfallIntensity? selectedIntensity,  LogisticFloodResult? result,  String? errorMessage)  $default,) {final _that = this;
 switch (_that) {
 case _CalculateState():
 return $default(_that.loadingBarangays,_that.calculating,_that.barangays,_that.selectedBarangay,_that.selectedIntensity,_that.result,_that.errorMessage);case _:
@@ -197,7 +198,7 @@ return $default(_that.loadingBarangays,_that.calculating,_that.barangays,_that.s
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( bool loadingBarangays,  bool calculating,  List<String> barangays,  String? selectedBarangay,  RainfallIntensity? selectedIntensity,  FloodCalculationResult? result,  String? errorMessage)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( bool loadingBarangays,  bool calculating,  List<String> barangays,  String? selectedBarangay,  RainfallIntensity? selectedIntensity,  LogisticFloodResult? result,  String? errorMessage)?  $default,) {final _that = this;
 switch (_that) {
 case _CalculateState() when $default != null:
 return $default(_that.loadingBarangays,_that.calculating,_that.barangays,_that.selectedBarangay,_that.selectedIntensity,_that.result,_that.errorMessage);case _:
@@ -226,7 +227,8 @@ class _CalculateState implements CalculateState {
 
 @override final  String? selectedBarangay;
 @override final  RainfallIntensity? selectedIntensity;
-@override final  FloodCalculationResult? result;
+@override final  LogisticFloodResult? result;
+// ✅ CHANGED from FloodCalculationResult
 @override final  String? errorMessage;
 
 /// Create a copy of CalculateState
@@ -259,7 +261,7 @@ abstract mixin class _$CalculateStateCopyWith<$Res> implements $CalculateStateCo
   factory _$CalculateStateCopyWith(_CalculateState value, $Res Function(_CalculateState) _then) = __$CalculateStateCopyWithImpl;
 @override @useResult
 $Res call({
- bool loadingBarangays, bool calculating, List<String> barangays, String? selectedBarangay, RainfallIntensity? selectedIntensity, FloodCalculationResult? result, String? errorMessage
+ bool loadingBarangays, bool calculating, List<String> barangays, String? selectedBarangay, RainfallIntensity? selectedIntensity, LogisticFloodResult? result, String? errorMessage
 });
 
 
@@ -284,7 +286,7 @@ as bool,barangays: null == barangays ? _self._barangays : barangays // ignore: c
 as List<String>,selectedBarangay: freezed == selectedBarangay ? _self.selectedBarangay : selectedBarangay // ignore: cast_nullable_to_non_nullable
 as String?,selectedIntensity: freezed == selectedIntensity ? _self.selectedIntensity : selectedIntensity // ignore: cast_nullable_to_non_nullable
 as RainfallIntensity?,result: freezed == result ? _self.result : result // ignore: cast_nullable_to_non_nullable
-as FloodCalculationResult?,errorMessage: freezed == errorMessage ? _self.errorMessage : errorMessage // ignore: cast_nullable_to_non_nullable
+as LogisticFloodResult?,errorMessage: freezed == errorMessage ? _self.errorMessage : errorMessage // ignore: cast_nullable_to_non_nullable
 as String?,
   ));
 }

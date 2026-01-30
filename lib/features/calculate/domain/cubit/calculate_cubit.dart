@@ -2,6 +2,7 @@ import 'package:dartz/dartz.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:rain_check/features/calculate/flood_data_service.dart';
+import 'package:rain_check/features/calculate/flood_risk_logistic_regression_calibrated.dart';
 
 part 'calculate_state.dart';
 part 'calculate_cubit.freezed.dart';
@@ -9,14 +10,12 @@ part 'calculate_cubit.freezed.dart';
 class CalculateCubit extends Cubit<CalculateState> {
   final FloodDataService _service;
 
-  // ✅ CORRECT: Named parameter only
   CalculateCubit({required FloodDataService service})
     : _service = service,
       super(const CalculateState()) {
     loadBarangays();
   }
 
-  /// Load barangays
   Future<void> loadBarangays() async {
     emit(state.copyWith(loadingBarangays: true, errorMessage: null));
 
@@ -40,7 +39,7 @@ class CalculateCubit extends Cubit<CalculateState> {
     emit(state.copyWith(selectedBarangay: value));
   }
 
-  /// Calculate flood risk
+  /// ✅ FIXED: Calculate using ML model
   Future<void> calculate() async {
     if (state.selectedBarangay == null || state.selectedIntensity == null) {
       emit(state.copyWith(errorMessage: 'Please complete all fields'));
@@ -50,9 +49,9 @@ class CalculateCubit extends Cubit<CalculateState> {
     emit(state.copyWith(calculating: true, result: null, errorMessage: null));
 
     final result = await _safeCall(() async {
-      return _service.calculateFloodRisk(
+      return _service.calculateFloodRiskML(
         barangayName: state.selectedBarangay!,
-        rainfallInMm: state.selectedIntensity!.min, // Use min value of range
+        intensity: state.selectedIntensity!,
       );
     });
 
@@ -62,7 +61,6 @@ class CalculateCubit extends Cubit<CalculateState> {
     );
   }
 
-  /// dartz-style safe call
   Future<Either<String, T>> _safeCall<T>(Future<T> Function() fn) async {
     try {
       final res = await fn();

@@ -4,53 +4,40 @@ import 'package:rain_check/core/constant/geojson_data.dart';
 import 'package:rain_check/core/repository/flood_model/barangay_boundaries_model.dart';
 import 'package:rain_check/core/repository/flood_model/flood_data_model.dart';
 import 'package:rain_check/core/utils/flood_data_extensions.dart';
+import 'package:rain_check/features/calculate/flood_risk_logistic_regression_calibrated.dart';
 
-/// Rainfall intensity thresholds (in mm)
 enum RainfallIntensity {
-  low(min: 170, max: 200),
-  moderate(min: 200, max: 300),
-  high(min: 300, max: 400);
+  low(min: 170, max: 200, display: 'Low (170-200 mm)'),
+  moderate(min: 200, max: 300, display: 'Moderate (200-300 mm)'),
+  high(min: 300, max: 400, display: 'High (300-400 mm)');
 
   final double min;
   final double max;
+  final String display;
 
-  const RainfallIntensity({required this.min, required this.max});
+  const RainfallIntensity({
+    required this.min,
+    required this.max,
+    required this.display,
+  });
 
-  bool contains(double rainfall) => rainfall >= min && rainfall <= max;
-
-  static RainfallIntensity? fromValue(double rainfall) {
-    if (rainfall < 170) return null; // Too low to calculate
-    if (rainfall > 400) return high; // Cap at high
-
-    return RainfallIntensity.values.firstWhere(
-      (intensity) => intensity.contains(rainfall),
-      orElse: () => high, // Default to high if above range
-    );
-  }
+  double get midpoint => (min + max) / 2;
 }
 
-/// Service for loading and querying flood data
-/// This is a SINGLETON - only loads data once
 class FloodDataService {
-  // Singleton instance
   static final FloodDataService _instance = FloodDataService._internal();
   factory FloodDataService() => _instance;
   FloodDataService._internal();
 
-  // Cached data (loaded once)
   FloodDataCollection? _floodData;
   BarangayBoundariesCollection? _boundaries;
+  late final FloodRiskLogisticRegression _model;
 
-  // Asset paths
-
-  /// Check if data is loaded
   bool get isLoaded => _floodData != null && _boundaries != null;
 
-  /// Initialize - call this once at app start
   Future<void> initialize() async {
-    if (isLoaded) return; // Already loaded
+    if (isLoaded) return;
 
-    // Load both JSON files in parallel
     final results = await Future.wait([
       rootBundle.loadString(floodingAreaPath),
       rootBundle.loadString(boundariesPath),
@@ -62,177 +49,94 @@ class FloodDataService {
     _boundaries = BarangayBoundariesCollection.fromJson(
       json.decode(results[1]) as Map<String, dynamic>,
     );
+
+    _model = FloodRiskLogisticRegression();
   }
 
-  /// Get flood data (ensures data is loaded)
   FloodDataCollection get floodData {
     if (_floodData == null) {
-      throw StateError(
-        'FloodDataService not initialized. Call initialize() first.',
-      );
+      throw StateError('FloodDataService not initialized');
     }
     return _floodData!;
   }
 
-  /// Get boundaries data (ensures data is loaded)
   BarangayBoundariesCollection get boundaries {
     if (_boundaries == null) {
-      throw StateError(
-        'FloodDataService not initialized. Call initialize() first.',
-      );
+      throw StateError('FloodDataService not initialized');
     }
     return _boundaries!;
   }
 
-  /// Calculate flood risk for a barangay based on rainfall
-  FloodCalculationResult calculateFloodRisk({
+  /// Calculate flood risk using ML model
+  LogisticFloodResult calculateFloodRiskML({
     required String barangayName,
-    required double rainfallInMm,
+    required RainfallIntensity intensity,
   }) {
-    // Get rainfall intensity level
-    final intensity = RainfallIntensity.fromValue(rainfallInMm);
-
-    if (intensity == null) {
-      return FloodCalculationResult(
-        barangayName: barangayName,
-        rainfallInMm: rainfallInMm,
-        hasFloodRisk: false,
-        message: 'Rainfall too low ($rainfallInMm mm) to calculate flood risk.',
-      );
-    }
-
-    // Get flood features for this barangay
     final floodFeatures = floodData.getFeaturesForBarangay(barangayName);
+    final boundary = boundaries.findByName(barangayName);
 
-    if (floodFeatures.isEmpty) {
-      return FloodCalculationResult(
-        barangayName: barangayName,
-        rainfallInMm: rainfallInMm,
-        hasFloodRisk: false,
-        message: 'No flood data available for $barangayName.',
-      );
+    if (boundary == null) {
+      throw Exception('Barangay boundary not found for $barangayName');
     }
 
-    // Determine if there's flood risk based on intensity and flood susceptibility
-    final hasHighRisk = floodFeatures.any(
-      (f) => f.properties.riskLevel == FloodRiskLevel.high,
+    final totalArea = boundary.properties.areaInHect;
+    final isUrban = boundary.properties.brgyType.toLowerCase() == 'urban';
+    final rainfallMm = intensity.midpoint;
+
+    // ✅ Calculate probability
+    final probability = _model.predictFloodProbability(
+      rainfallInMm: rainfallMm,
+      floodFeatures: floodFeatures,
+      totalBarangayArea: totalArea,
+      isUrban: isUrban,
     );
-    final hasModerateRisk = floodFeatures.any(
-      (f) => f.properties.riskLevel == FloodRiskLevel.moderate,
-    );
 
-    // Calculate risk based on rainfall intensity + area susceptibility
-    bool hasFloodRisk = false;
-    FloodRiskLevel? overallRisk;
-    String message = '';
+    final riskLevel = _model.classifyRisk(probability);
+    final confidence = _model.getRiskConfidence(probability);
 
-    switch (intensity) {
-      case RainfallIntensity.low:
-        // Low rainfall only triggers if there's high susceptibility areas
-        hasFloodRisk = hasHighRisk;
-        overallRisk = hasHighRisk
-            ? FloodRiskLevel.moderate
-            : FloodRiskLevel.low;
-        message = hasHighRisk
-            ? 'Low rainfall detected. Flooding possible in high-risk zones.'
-            : 'Low rainfall. Minimal flood risk.';
-        break;
-
-      case RainfallIntensity.moderate:
-        // Moderate rainfall triggers if moderate or high susceptibility
-        hasFloodRisk = hasModerateRisk || hasHighRisk;
-        overallRisk = hasHighRisk
-            ? FloodRiskLevel.high
-            : FloodRiskLevel.moderate;
-        message = hasFloodRisk
-            ? 'Moderate rainfall detected. Flooding likely in susceptible areas.'
-            : 'Moderate rainfall. Low flood risk.';
-        break;
-
-      case RainfallIntensity.high:
-        // High rainfall always triggers flood risk
-        hasFloodRisk = true;
-        overallRisk = FloodRiskLevel.high;
-        message = 'High rainfall detected! Flooding highly probable.';
-        break;
-    }
-
-    // Calculate affected area
-    final totalAffectedArea = floodFeatures.fold<double>(
+    // ✅ Calculate affected area
+    final affectedArea = floodFeatures.fold<double>(
       0.0,
       (sum, feature) => sum + feature.properties.areaInHas,
     );
 
-    return FloodCalculationResult(
+    // ✅ Generate appropriate message
+    final message = _generateRiskMessage(riskLevel, probability);
+
+    return LogisticFloodResult(
       barangayName: barangayName,
-      rainfallInMm: rainfallInMm,
-      rainfallIntensity: intensity,
-      hasFloodRisk: hasFloodRisk,
-      overallRiskLevel: overallRisk,
-      affectedAreaHectares: totalAffectedArea,
-      highRiskZones: floodFeatures
-          .where((f) => f.properties.riskLevel == FloodRiskLevel.high)
-          .length,
-      moderateRiskZones: floodFeatures
-          .where((f) => f.properties.riskLevel == FloodRiskLevel.moderate)
-          .length,
-      lowRiskZones: floodFeatures
-          .where((f) => f.properties.riskLevel == FloodRiskLevel.low)
-          .length,
+      rainfallInMm: rainfallMm,
+      floodProbability: probability,
+      predictedRiskLevel: riskLevel,
+      riskConfidence: confidence,
       message: message,
-      floodFeatures: floodFeatures,
+      affectedAreaHectares: affectedArea,
     );
   }
 
-  /// Get all unique barangay names
+  String _generateRiskMessage(FloodRiskLevel level, double probability) {
+    final pct = (probability * 100).toStringAsFixed(0);
+
+    switch (level) {
+      case FloodRiskLevel.high:
+        return 'There is a $pct% chance of flooding in your area. Stay safe and contact your local emergency services. At this risk level, keep monitoring updates, secure important items, unplug all appliances, and prepare an emergency go bag. Avoid low-lying areas and be ready to evacuate if authorities issue an alert and prepared.';
+
+      case FloodRiskLevel.moderate:
+        return 'There is a $pct% chance of flooding. Monitor weather updates and prepare for potential evacuation. Secure outdoor items and avoid low-lying areas.';
+
+      case FloodRiskLevel.low:
+        return 'There is a $pct% chance of flooding. Risk is low but stay alert to changing conditions. Avoid unnecessary travel to flood-prone areas.';
+
+      default:
+        return 'There is a $pct% chance of flooding. Conditions are currently favorable but continue to monitor weather updates.';
+    }
+  }
+
   List<String> getAllBarangayNames() {
     return floodData.uniqueBarangayNames;
   }
 
-  /// Get barangay boundary
   BarangayBoundaryFeature? getBarangayBoundary(String barangayName) {
     return boundaries.findByName(barangayName);
-  }
-}
-
-/// Result of flood risk calculation
-class FloodCalculationResult {
-  final String barangayName;
-  final double rainfallInMm;
-  final RainfallIntensity? rainfallIntensity;
-  final bool hasFloodRisk;
-  final FloodRiskLevel? overallRiskLevel;
-  final double? affectedAreaHectares;
-  final int? highRiskZones;
-  final int? moderateRiskZones;
-  final int? lowRiskZones;
-  final String message;
-  final List<FloodFeature>? floodFeatures;
-
-  FloodCalculationResult({
-    required this.barangayName,
-    required this.rainfallInMm,
-    this.rainfallIntensity,
-    required this.hasFloodRisk,
-    this.overallRiskLevel,
-    this.affectedAreaHectares,
-    this.highRiskZones,
-    this.moderateRiskZones,
-    this.lowRiskZones,
-    required this.message,
-    this.floodFeatures,
-  });
-
-  String get formattedAffectedArea {
-    if (affectedAreaHectares == null) return 'N/A';
-    return '${affectedAreaHectares!.toStringAsFixed(2)} hectares';
-  }
-
-  String get riskLevelDisplay {
-    return overallRiskLevel?.displayName ?? 'Unknown';
-  }
-
-  String get rainfallIntensityDisplay {
-    return rainfallIntensity?.name.toUpperCase() ?? 'N/A';
   }
 }

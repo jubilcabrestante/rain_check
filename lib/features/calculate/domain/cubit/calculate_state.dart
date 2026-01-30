@@ -8,7 +8,7 @@ abstract class CalculateState with _$CalculateState {
     @Default([]) List<String> barangays,
     String? selectedBarangay,
     RainfallIntensity? selectedIntensity,
-    FloodCalculationResult? result,
+    LogisticFloodResult? result, // ✅ CHANGED from FloodCalculationResult
     String? errorMessage,
   }) = _CalculateState;
 }
