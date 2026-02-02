@@ -14,17 +14,22 @@ import 'package:flutter/widgets.dart';
 class $AssetsDataGen {
   const $AssetsDataGen();
 
-  /// File path: assets/data/ppc_boundaries.geojson
-  String get ppcBoundaries => 'assets/data/ppc_boundaries.geojson';
+  /// File path: assets/data/ppc_boundaries_wgs84.geojson
+  String get ppcBoundariesWgs84 => 'assets/data/ppc_boundaries_wgs84.geojson';
 
   /// File path: assets/data/ppc_daily_data.csv
   String get ppcDailyData => 'assets/data/ppc_daily_data.csv';
 
-  /// File path: assets/data/ppc_flooding_area.geojson
-  String get ppcFloodingArea => 'assets/data/ppc_flooding_area.geojson';
+  /// File path: assets/data/ppc_flooding_area_wgs84.geojson
+  String get ppcFloodingAreaWgs84 =>
+      'assets/data/ppc_flooding_area_wgs84.geojson';
 
   /// List of all assets
-  List<String> get values => [ppcBoundaries, ppcDailyData, ppcFloodingArea];
+  List<String> get values => [
+    ppcBoundariesWgs84,
+    ppcDailyData,
+    ppcFloodingAreaWgs84,
+  ];
 }
 
 class $AssetsImagesGen {

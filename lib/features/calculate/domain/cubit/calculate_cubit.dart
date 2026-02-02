@@ -1,8 +1,8 @@
 import 'package:dartz/dartz.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
-import 'package:rain_check/features/calculate/flood_data_service.dart';
-import 'package:rain_check/features/calculate/flood_risk_logistic_regression_calibrated.dart';
+import 'package:rain_check/features/calculate/widgets/flood_data_service.dart';
+import 'package:rain_check/features/calculate/widgets/flood_risk_logistic_regression_calibrated.dart';
 
 part 'calculate_state.dart';
 part 'calculate_cubit.freezed.dart';
@@ -31,18 +31,39 @@ class CalculateCubit extends Cubit<CalculateState> {
     );
   }
 
-  void setRainfall(RainfallIntensity value) {
-    emit(state.copyWith(selectedIntensity: value));
-  }
-
   void setBarangay(String value) {
     emit(state.copyWith(selectedBarangay: value));
   }
 
-  /// ✅ FIXED: Calculate using ML model
+  // ✅ NEW: typed rainfall
+  void setRainfallMm(double? mm) {
+    emit(state.copyWith(rainfallInMm: mm));
+  }
+
   Future<void> calculate() async {
-    if (state.selectedBarangay == null || state.selectedIntensity == null) {
-      emit(state.copyWith(errorMessage: 'Please complete all fields'));
+    final barangay = state.selectedBarangay;
+    final mm = state.rainfallInMm;
+
+    if (barangay == null || barangay.isEmpty) {
+      emit(state.copyWith(errorMessage: 'Please select a barangay'));
+      return;
+    }
+
+    if (mm == null) {
+      emit(state.copyWith(errorMessage: 'Please enter rainfall (mm)'));
+      return;
+    }
+
+    if (mm < 0) {
+      emit(state.copyWith(errorMessage: 'Rainfall must be 0 or higher'));
+      return;
+    }
+
+    // optional sanity cap
+    if (mm > 1000) {
+      emit(
+        state.copyWith(errorMessage: 'Rainfall seems too high ( > 1000mm )'),
+      );
       return;
     }
 
@@ -50,8 +71,8 @@ class CalculateCubit extends Cubit<CalculateState> {
 
     final result = await _safeCall(() async {
       return _service.calculateFloodRiskML(
-        barangayName: state.selectedBarangay!,
-        intensity: state.selectedIntensity!,
+        barangayName: barangay,
+        rainfallInMm: mm, // ✅ updated call
       );
     });
 

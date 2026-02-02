@@ -7,8 +7,11 @@ abstract class CalculateState with _$CalculateState {
     @Default(false) bool calculating,
     @Default([]) List<String> barangays,
     String? selectedBarangay,
-    RainfallIntensity? selectedIntensity,
-    LogisticFloodResult? result, // ✅ CHANGED from FloodCalculationResult
+
+    // ✅ replace enum with typed number
+    double? rainfallInMm,
+
+    LogisticFloodResult? result,
     String? errorMessage,
   }) = _CalculateState;
 }

@@ -24,7 +24,7 @@ class DataLoader {
   }
 
   Future<FloodDataCollection> loadFloodAreas({
-    String assetPath = 'assets/data/ppc_flooding_area.geojson',
+    String assetPath = 'assets/data/ppc_flooding_area_wgs84.geojson',
   }) async {
     final jsonMap = await _loadJsonMap(assetPath);
     return FloodDataCollection.fromJson(jsonMap);

@@ -67,25 +67,11 @@ Map<String, dynamic> _$BarangayBoundaryPropertiesToJson(
 BarangayGeometry _$BarangayGeometryFromJson(Map<String, dynamic> json) =>
     BarangayGeometry(
       type: json['type'] as String,
-      coordinates: (json['coordinates'] as List<dynamic>)
-          .map(
-            (e) => (e as List<dynamic>)
-                .map(
-                  (e) => (e as List<dynamic>)
-                      .map(
-                        (e) => (e as List<dynamic>)
-                            .map((e) => (e as num).toDouble())
-                            .toList(),
-                      )
-                      .toList(),
-                )
-                .toList(),
-          )
-          .toList(),
+      coordinates: BarangayGeometry._coordsFromJson(json['coordinates']),
     );
 
 Map<String, dynamic> _$BarangayGeometryToJson(BarangayGeometry instance) =>
     <String, dynamic>{
       'type': instance.type,
-      'coordinates': instance.coordinates,
+      'coordinates': BarangayGeometry._coordsToJson(instance.coordinates),
     };

@@ -9,12 +9,24 @@ import 'package:rain_check/core/enum/flood_risk_level.dart';
 import 'package:rain_check/core/shared/app_custom_button.dart';
 import 'package:rain_check/core/shared/app_drop_down_field.dart';
 import 'package:rain_check/features/calculate/domain/cubit/calculate_cubit.dart';
-import 'package:rain_check/features/calculate/flood_data_service.dart';
-import 'package:rain_check/features/calculate/flood_risk_logistic_regression_calibrated.dart';
+import 'package:rain_check/features/calculate/widgets/flood_risk_logistic_regression_calibrated.dart';
 
 @RoutePage()
-class CalculateScreen extends StatelessWidget {
+class CalculateScreen extends StatefulWidget {
   const CalculateScreen({super.key});
+
+  @override
+  State<CalculateScreen> createState() => _CalculateScreenState();
+}
+
+class _CalculateScreenState extends State<CalculateScreen> {
+  final _rainController = TextEditingController();
+
+  @override
+  void dispose() {
+    _rainController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -36,7 +48,8 @@ class CalculateScreen extends StatelessWidget {
           buildWhen: (p, c) =>
               p.loadingBarangays != c.loadingBarangays ||
               p.calculating != c.calculating ||
-              p.result != c.result,
+              p.result != c.result ||
+              p.rainfallInMm != c.rainfallInMm,
           builder: (context, state) {
             if (state.loadingBarangays) {
               return const Center(child: CircularProgressIndicator());
@@ -47,26 +60,26 @@ class CalculateScreen extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  BlocSelector<
-                    CalculateCubit,
-                    CalculateState,
-                    RainfallIntensity?
-                  >(
-                    selector: (s) => s.selectedIntensity,
-                    builder: (context, selected) {
-                      return AppDropdownField<RainfallIntensity>(
-                        title: 'Rainfall Intensity',
-                        value: selected,
-                        options: RainfallIntensity.values,
-                        optionLabel: (e) => e.display,
-                        onChanged: (v) {
-                          if (v != null)
-                            context.read<CalculateCubit>().setRainfall(v);
-                        },
-                      );
+                  // ✅ NEW rainfall input
+                  TextFormField(
+                    controller: _rainController,
+                    keyboardType: const TextInputType.numberWithOptions(
+                      decimal: true,
+                      signed: false,
+                    ),
+                    decoration: const InputDecoration(
+                      labelText: 'Rainfall (mm)',
+                      hintText: 'e.g. 250',
+                      border: OutlineInputBorder(),
+                    ),
+                    onChanged: (v) {
+                      final mm = double.tryParse(v.trim());
+                      context.read<CalculateCubit>().setRainfallMm(mm);
                     },
                   ),
+
                   const SizedBox(height: 16),
+
                   BlocSelector<CalculateCubit, CalculateState, _BarangayVm>(
                     selector: (s) =>
                         _BarangayVm(s.selectedBarangay, s.barangays),
@@ -83,8 +96,10 @@ class CalculateScreen extends StatelessWidget {
                       );
                     },
                   ),
+
                   const SizedBox(height: 32),
                   _CalculateButton(isLoading: state.calculating),
+
                   if (state.result != null) ...[
                     const SizedBox(height: 32),
                     FloodResultCard(result: state.result!),
@@ -107,7 +122,8 @@ class _CalculateButton extends StatelessWidget {
   Widget build(BuildContext context) {
     final canCalculate = context.select<CalculateCubit, bool>((cubit) {
       final s = cubit.state;
-      return s.selectedBarangay != null && s.selectedIntensity != null;
+      return (s.selectedBarangay != null && s.selectedBarangay!.isNotEmpty) &&
+          (s.rainfallInMm != null);
     });
 
     return AppElevatedButton(

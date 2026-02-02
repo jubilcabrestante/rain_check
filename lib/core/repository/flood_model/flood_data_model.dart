@@ -1,7 +1,7 @@
 // lib/core/repository/flood_model/flood_data_model.dart
 
 import 'package:json_annotation/json_annotation.dart';
-import 'package:rain_check/features/calculate/model/geojson_crs_model.dart';
+import 'package:rain_check/core/repository/flood_model/geojson_crs_model.dart';
 
 part 'flood_data_model.g.dart';
 

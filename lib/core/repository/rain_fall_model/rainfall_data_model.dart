@@ -47,7 +47,7 @@ class RainfallDataPoint {
     this.windDirection,
   });
 
-  @JsonKey(ignore: true)
+  @JsonKey()
   DateTime get date => DateTime(year, month, day);
 
   factory RainfallDataPoint.fromJson(Map<String, dynamic> json) =>
