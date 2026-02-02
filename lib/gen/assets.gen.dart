@@ -17,11 +17,14 @@ class $AssetsDataGen {
   /// File path: assets/data/ppc_boundaries.geojson
   String get ppcBoundaries => 'assets/data/ppc_boundaries.geojson';
 
+  /// File path: assets/data/ppc_daily_data.csv
+  String get ppcDailyData => 'assets/data/ppc_daily_data.csv';
+
   /// File path: assets/data/ppc_flooding_area.geojson
   String get ppcFloodingArea => 'assets/data/ppc_flooding_area.geojson';
 
   /// List of all assets
-  List<String> get values => [ppcBoundaries, ppcFloodingArea];
+  List<String> get values => [ppcBoundaries, ppcDailyData, ppcFloodingArea];
 }
 
 class $AssetsImagesGen {

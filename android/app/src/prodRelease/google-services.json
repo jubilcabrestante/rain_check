@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "819876668526",
+    "project_id": "rain-check-2f98e",
+    "storage_bucket": "rain-check-2f98e.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:819876668526:android:e8831bd5ca84278549f27f",
+        "android_client_info": {
+          "package_name": "com.example.rain_check"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "819876668526-1l5md35l54eeenun4smsl8oher7pkoe4.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.rain_check",
+            "certificate_hash": "f2435d880e65e5198572125c6dfc029be0601454"
+          }
+        },
+        {
+          "client_id": "819876668526-q2mifof1ptdm52fr5chq4gifoj2p6de2.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyC64lEgw_jVrLcqmAdohzRdPn7uV3HDroI"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "819876668526-q2mifof1ptdm52fr5chq4gifoj2p6de2.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

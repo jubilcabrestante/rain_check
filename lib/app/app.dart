@@ -12,6 +12,7 @@ import 'package:rain_check/core/repository/auth_user_repository.dart';
 import 'package:rain_check/features/calculate/domain/cubit/calculate_cubit.dart';
 import 'package:rain_check/features/calculate/flood_data_service.dart';
 import 'package:rain_check/features/otp_verification/domain/cubit/verification_cubit.dart';
+import 'package:rain_check/features/predict/domain/predict_cubit.dart';
 import 'package:responsive_framework/responsive_framework.dart';
 
 class MainApp extends StatefulWidget {
@@ -28,6 +29,7 @@ class _MainAppState extends State<MainApp> {
   late AuthUserCubit _authUserCubit;
   late VerificationCubit _verificationCubit;
   late CalculateCubit _calculateCubit;
+  // late PredictCubit _predictCubit;
 
   @override
   void initState() {
@@ -52,6 +54,7 @@ class _MainAppState extends State<MainApp> {
       authUserCubit: _authUserCubit,
     );
     _calculateCubit = CalculateCubit(service: floodData);
+    // _predictCubit = PredictCubit();
   }
 
   @override
@@ -76,6 +79,7 @@ class _MainAppState extends State<MainApp> {
           BlocProvider<AuthUserCubit>.value(value: _authUserCubit),
           BlocProvider<VerificationCubit>.value(value: _verificationCubit),
           BlocProvider<CalculateCubit>.value(value: _calculateCubit),
+          // BlocProvider<PredictCubit>.value(value: _predictCubit),
         ],
         child: MaterialApp.router(
           debugShowCheckedModeBanner: false,

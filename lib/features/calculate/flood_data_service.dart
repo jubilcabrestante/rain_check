@@ -1,15 +1,19 @@
+// lib/features/calculate/flood_data_service.dart
+
 import 'dart:convert';
 import 'package:flutter/services.dart';
+
 import 'package:rain_check/core/constant/geojson_data.dart';
+import 'package:rain_check/core/enum/flood_risk_level.dart';
 import 'package:rain_check/core/repository/flood_model/barangay_boundaries_model.dart';
 import 'package:rain_check/core/repository/flood_model/flood_data_model.dart';
 import 'package:rain_check/core/utils/flood_data_extensions.dart';
 import 'package:rain_check/features/calculate/flood_risk_logistic_regression_calibrated.dart';
 
 enum RainfallIntensity {
-  low(min: 170, max: 200, display: 'Low (170-200 mm)'),
-  moderate(min: 200, max: 300, display: 'Moderate (200-300 mm)'),
-  high(min: 300, max: 400, display: 'High (300-400 mm)');
+  low(min: 0, max: 150, display: 'Low (0-150 mm)'),
+  moderate(min: 150, max: 300, display: 'Moderate (150-300 mm)'),
+  high(min: 300, max: 450, display: 'High (300-450 mm)');
 
   final double min;
   final double max;
@@ -54,54 +58,44 @@ class FloodDataService {
   }
 
   FloodDataCollection get floodData {
-    if (_floodData == null) {
-      throw StateError('FloodDataService not initialized');
-    }
-    return _floodData!;
+    final v = _floodData;
+    if (v == null) throw StateError('FloodDataService not initialized');
+    return v;
   }
 
   BarangayBoundariesCollection get boundaries {
-    if (_boundaries == null) {
-      throw StateError('FloodDataService not initialized');
-    }
-    return _boundaries!;
+    final v = _boundaries;
+    if (v == null) throw StateError('FloodDataService not initialized');
+    return v;
   }
 
-  /// Calculate flood risk using ML model
   LogisticFloodResult calculateFloodRiskML({
     required String barangayName,
     required RainfallIntensity intensity,
   }) {
-    final floodFeatures = floodData.getFeaturesForBarangay(barangayName);
     final boundary = boundaries.findByName(barangayName);
-
     if (boundary == null) {
-      throw Exception('Barangay boundary not found for $barangayName');
+      throw StateError('Boundary not found for $barangayName');
     }
 
-    final totalArea = boundary.properties.areaInHect;
-    final isUrban = boundary.properties.brgyType.toLowerCase() == 'urban';
+    final floodFeatures = floodData.getFeaturesForBarangay(barangayName);
     final rainfallMm = intensity.midpoint;
+    final totalArea = boundary.properties.areaInHect;
 
-    // ✅ Calculate probability
     final probability = _model.predictFloodProbability(
       rainfallInMm: rainfallMm,
       floodFeatures: floodFeatures,
       totalBarangayArea: totalArea,
-      isUrban: isUrban,
+      isUrban: boundary.isUrban,
     );
 
-    final riskLevel = _model.classifyRisk(probability);
-    final confidence = _model.getRiskConfidence(probability);
+    final riskLevel = _model.classify(probability);
+    final confidence = _model.confidence(probability);
 
-    // ✅ Calculate affected area
     final affectedArea = floodFeatures.fold<double>(
       0.0,
       (sum, feature) => sum + feature.properties.areaInHas,
     );
-
-    // ✅ Generate appropriate message
-    final message = _generateRiskMessage(riskLevel, probability);
 
     return LogisticFloodResult(
       barangayName: barangayName,
@@ -109,7 +103,7 @@ class FloodDataService {
       floodProbability: probability,
       predictedRiskLevel: riskLevel,
       riskConfidence: confidence,
-      message: message,
+      message: _generateRiskMessage(riskLevel, probability),
       affectedAreaHectares: affectedArea,
     );
   }
@@ -119,24 +113,16 @@ class FloodDataService {
 
     switch (level) {
       case FloodRiskLevel.high:
-        return 'There is a $pct% chance of flooding in your area. Stay safe and contact your local emergency services. At this risk level, keep monitoring updates, secure important items, unplug all appliances, and prepare an emergency go bag. Avoid low-lying areas and be ready to evacuate if authorities issue an alert and prepared.';
-
+        return 'There is a $pct% chance of flooding in your area. Stay safe and contact your local emergency services. Monitor updates, secure important items, unplug appliances, and prepare an emergency go bag. Avoid low-lying areas and be ready to evacuate if authorities issue an alert.';
       case FloodRiskLevel.moderate:
-        return 'There is a $pct% chance of flooding. Monitor weather updates and prepare for potential evacuation. Secure outdoor items and avoid low-lying areas.';
-
+        return 'There is a $pct% chance of flooding. Monitor weather updates and prepare for possible evacuation. Secure outdoor items and avoid low-lying areas.';
       case FloodRiskLevel.low:
         return 'There is a $pct% chance of flooding. Risk is low but stay alert to changing conditions. Avoid unnecessary travel to flood-prone areas.';
-
-      default:
-        return 'There is a $pct% chance of flooding. Conditions are currently favorable but continue to monitor weather updates.';
     }
   }
 
-  List<String> getAllBarangayNames() {
-    return floodData.uniqueBarangayNames;
-  }
+  List<String> getAllBarangayNames() => floodData.uniqueBarangayNames;
 
-  BarangayBoundaryFeature? getBarangayBoundary(String barangayName) {
-    return boundaries.findByName(barangayName);
-  }
+  BarangayBoundaryFeature? getBarangayBoundary(String barangayName) =>
+      boundaries.findByName(barangayName);
 }

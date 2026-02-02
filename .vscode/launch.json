@@ -1,14 +1,14 @@
 {
   "version": "0.2.0",
   "configurations": [
-    // {
-    //   "name": "rain_check (prod - release)",
-    //   "request": "launch",
-    //   "type": "dart",
-    //   "flutterMode": "release",
-    //   "program": "lib/main/main_prod.dart",
-    //   "args": ["--flavor", "prod"]
-    // },
+    {
+      "name": "rain_check (prod - release)",
+      "request": "launch",
+      "type": "dart",
+      "flutterMode": "release",
+      "program": "lib/main/main_prod.dart",
+      "args": ["--flavor", "prod"]
+    },
     {
       "name": "rain_check (dev - release)",
       "request": "launch",
@@ -17,14 +17,14 @@
       "program": "lib/main/main_dev.dart",
       "args": ["--flavor", "dev"]
     },
-    // {
-    //   "name": "rain_check (prod - debug)",
-    //   "request": "launch",
-    //   "type": "dart",
-    //   "flutterMode": "debug",
-    //   "program": "lib/main/main_prod.dart",
-    //   "args": ["--flavor", "prod"]
-    // },
+    {
+      "name": "rain_check (prod - debug)",
+      "request": "launch",
+      "type": "dart",
+      "flutterMode": "debug",
+      "program": "lib/main/main_prod.dart",
+      "args": ["--flavor", "prod"]
+    },
     {
       "name": "rain_check (dev - debug)",
       "request": "launch",

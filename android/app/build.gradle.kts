@@ -61,10 +61,10 @@ android {
     flavorDimensions += "default"
 
     productFlavors {
-    //    create("prod") {
-    //        dimension = "default"
-    //        resValue("string", "app_name", "Rain Check")
-    //    }
+        create("prod") {
+            dimension = "default"
+            resValue("string", "app_name", "Rain Check")
+        }
 
         create("dev") {
             dimension = "default"

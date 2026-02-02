@@ -1,8 +1,10 @@
+// lib/core/repository/flood_model/barangay_boundaries_model.dart
+
 import 'package:json_annotation/json_annotation.dart';
+import 'package:rain_check/features/calculate/model/geojson_crs_model.dart';
 
 part 'barangay_boundaries_model.g.dart';
 
-/// Root model for barangay boundaries data
 @JsonSerializable()
 class BarangayBoundariesCollection {
   final String type;
@@ -10,7 +12,7 @@ class BarangayBoundariesCollection {
   final CoordinateReferenceSystem crs;
   final List<BarangayBoundaryFeature> features;
 
-  BarangayBoundariesCollection({
+  const BarangayBoundariesCollection({
     required this.type,
     required this.name,
     required this.crs,
@@ -23,14 +25,13 @@ class BarangayBoundariesCollection {
   Map<String, dynamic> toJson() => _$BarangayBoundariesCollectionToJson(this);
 }
 
-/// Individual barangay boundary feature
 @JsonSerializable()
 class BarangayBoundaryFeature {
   final String type;
   final BarangayBoundaryProperties properties;
   final BarangayGeometry geometry;
 
-  BarangayBoundaryFeature({
+  const BarangayBoundaryFeature({
     required this.type,
     required this.properties,
     required this.geometry,
@@ -42,7 +43,6 @@ class BarangayBoundaryFeature {
   Map<String, dynamic> toJson() => _$BarangayBoundaryFeatureToJson(this);
 }
 
-/// Properties of a barangay boundary
 @JsonSerializable()
 class BarangayBoundaryProperties {
   @JsonKey(name: 'ID')
@@ -60,7 +60,7 @@ class BarangayBoundaryProperties {
   @JsonKey(name: 'AreaInHect')
   final double areaInHect;
 
-  BarangayBoundaryProperties({
+  const BarangayBoundaryProperties({
     required this.id,
     required this.brgyName,
     required this.brgyType,
@@ -74,42 +74,69 @@ class BarangayBoundaryProperties {
   Map<String, dynamic> toJson() => _$BarangayBoundaryPropertiesToJson(this);
 }
 
-/// Geometry for barangay boundaries (MultiPolygon)
 @JsonSerializable()
 class BarangayGeometry {
   final String type;
+
+  @JsonKey(fromJson: _coordsFromJson, toJson: _coordsToJson)
   final List<List<List<List<double>>>> coordinates;
 
-  BarangayGeometry({required this.type, required this.coordinates});
+  const BarangayGeometry({required this.type, required this.coordinates});
 
   factory BarangayGeometry.fromJson(Map<String, dynamic> json) =>
       _$BarangayGeometryFromJson(json);
 
   Map<String, dynamic> toJson() => _$BarangayGeometryToJson(this);
-}
 
-/// Coordinate Reference System
-@JsonSerializable()
-class CoordinateReferenceSystem {
-  final String type;
-  final CrsProperties properties;
+  // --------------------------
+  // ✅ Accept Polygon OR MultiPolygon
+  // --------------------------
+  static List<List<List<List<double>>>> _coordsFromJson(dynamic raw) {
+    if (raw is! List) return const [];
 
-  CoordinateReferenceSystem({required this.type, required this.properties});
+    // Polygon: [[[x,y],...], ...]
+    // MultiPolygon: [[[[x,y],...], ...], ...]
+    final bool isPolygon =
+        raw.isNotEmpty &&
+        raw[0] is List &&
+        (raw[0] as List).isNotEmpty &&
+        (raw[0] as List)[0] is List &&
+        ((raw[0] as List)[0] as List).isNotEmpty &&
+        (((raw[0] as List)[0] as List)[0] is num);
 
-  factory CoordinateReferenceSystem.fromJson(Map<String, dynamic> json) =>
-      _$CoordinateReferenceSystemFromJson(json);
+    if (isPolygon) {
+      // Wrap polygon into MultiPolygon
+      final poly = (raw)
+          .map<List<List<double>>>(
+            (ring) => (ring as List)
+                .map<List<double>>(
+                  (pt) =>
+                      (pt as List).map((e) => (e as num).toDouble()).toList(),
+                )
+                .toList(),
+          )
+          .toList();
 
-  Map<String, dynamic> toJson() => _$CoordinateReferenceSystemToJson(this);
-}
+      return [poly];
+    }
 
-@JsonSerializable()
-class CrsProperties {
-  final String name;
+    // MultiPolygon
+    return (raw)
+        .map<List<List<List<double>>>>(
+          (polygon) => (polygon as List)
+              .map<List<List<double>>>(
+                (ring) => (ring as List)
+                    .map<List<double>>(
+                      (pt) => (pt as List)
+                          .map((e) => (e as num).toDouble())
+                          .toList(),
+                    )
+                    .toList(),
+              )
+              .toList(),
+        )
+        .toList();
+  }
 
-  CrsProperties({required this.name});
-
-  factory CrsProperties.fromJson(Map<String, dynamic> json) =>
-      _$CrsPropertiesFromJson(json);
-
-  Map<String, dynamic> toJson() => _$CrsPropertiesToJson(this);
+  static dynamic _coordsToJson(List<List<List<List<double>>>> value) => value;
 }

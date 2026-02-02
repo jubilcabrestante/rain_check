@@ -1,12 +1,14 @@
+// lib/core/repository/flood_model/flood_data_model.dart
+
 import 'package:json_annotation/json_annotation.dart';
+import 'package:rain_check/features/calculate/model/geojson_crs_model.dart';
 
 part 'flood_data_model.g.dart';
 
-/// Root model for flood susceptibility data
 @JsonSerializable()
 class FloodDataCollection {
   @JsonKey(name: 'type')
-  final String type; // "FeatureCollection"
+  final String type;
 
   @JsonKey(name: 'name')
   final String name;
@@ -17,7 +19,7 @@ class FloodDataCollection {
   @JsonKey(name: 'features')
   final List<FloodFeature> features;
 
-  FloodDataCollection({
+  const FloodDataCollection({
     required this.type,
     required this.name,
     required this.crs,
@@ -30,11 +32,10 @@ class FloodDataCollection {
   Map<String, dynamic> toJson() => _$FloodDataCollectionToJson(this);
 }
 
-/// Individual flood feature/area
 @JsonSerializable()
 class FloodFeature {
   @JsonKey(name: 'type')
-  final String type; // "Feature"
+  final String type;
 
   @JsonKey(name: 'properties')
   final FloodProperties properties;
@@ -42,7 +43,7 @@ class FloodFeature {
   @JsonKey(name: 'geometry')
   final FloodGeometry geometry;
 
-  FloodFeature({
+  const FloodFeature({
     required this.type,
     required this.properties,
     required this.geometry,
@@ -54,7 +55,6 @@ class FloodFeature {
   Map<String, dynamic> toJson() => _$FloodFeatureToJson(this);
 }
 
-/// Properties of a flood-prone area
 @JsonSerializable()
 class FloodProperties {
   @JsonKey(name: 'fid')
@@ -64,19 +64,19 @@ class FloodProperties {
   final double id;
 
   @JsonKey(name: 'Var')
-  final String variation; // "1", "2", "3"
+  final String variation;
 
   @JsonKey(name: 'FloodSusc')
-  final String floodSusc; // HF, MF, LF
+  final String floodSusc; // HF / MF / LF
 
   @JsonKey(name: 'Source_Dat')
-  final String sourceDat; // MGB, DOST-NOAH
+  final String sourceDat;
 
   @JsonKey(name: 'BRGY_NAME')
   final String brgyName;
 
   @JsonKey(name: 'BRGY_TYPE')
-  final String brgyType; // urban/rural
+  final String brgyType;
 
   @JsonKey(name: 'brgyid')
   final String brgyid;
@@ -90,7 +90,7 @@ class FloodProperties {
   @JsonKey(name: 'Composite_')
   final String composite;
 
-  FloodProperties({
+  const FloodProperties({
     required this.fid,
     required this.id,
     required this.variation,
@@ -110,73 +110,18 @@ class FloodProperties {
   Map<String, dynamic> toJson() => _$FloodPropertiesToJson(this);
 }
 
-/// Geometry for flood areas (MultiPolygon)
 @JsonSerializable()
 class FloodGeometry {
   @JsonKey(name: 'type')
-  final String type; // "MultiPolygon"
+  final String type;
 
   @JsonKey(name: 'coordinates')
   final List<List<List<List<double>>>> coordinates;
 
-  FloodGeometry({required this.type, required this.coordinates});
+  const FloodGeometry({required this.type, required this.coordinates});
 
   factory FloodGeometry.fromJson(Map<String, dynamic> json) =>
       _$FloodGeometryFromJson(json);
 
   Map<String, dynamic> toJson() => _$FloodGeometryToJson(this);
-}
-
-/// Coordinate Reference System
-@JsonSerializable()
-class CoordinateReferenceSystem {
-  @JsonKey(name: 'type')
-  final String type;
-
-  @JsonKey(name: 'properties')
-  final CrsProperties properties;
-
-  CoordinateReferenceSystem({required this.type, required this.properties});
-
-  factory CoordinateReferenceSystem.fromJson(Map<String, dynamic> json) =>
-      _$CoordinateReferenceSystemFromJson(json);
-
-  Map<String, dynamic> toJson() => _$CoordinateReferenceSystemToJson(this);
-}
-
-@JsonSerializable()
-class CrsProperties {
-  @JsonKey(name: 'name')
-  final String name;
-
-  CrsProperties({required this.name});
-
-  factory CrsProperties.fromJson(Map<String, dynamic> json) =>
-      _$CrsPropertiesFromJson(json);
-
-  Map<String, dynamic> toJson() => _$CrsPropertiesToJson(this);
-}
-
-/// Enums for type safety
-enum FloodSusceptibility {
-  @JsonValue('HF')
-  high,
-  @JsonValue('MF')
-  moderate,
-  @JsonValue('LF')
-  low,
-}
-
-enum DataSource {
-  @JsonValue('MGB')
-  mgb,
-  @JsonValue('DOST-NOAH')
-  dostNoah,
-}
-
-enum BarangayType {
-  @JsonValue('urban')
-  urban,
-  @JsonValue('rural')
-  rural,
 }

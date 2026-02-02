@@ -1,74 +1,54 @@
+// lib/features/calculate/flood_risk_logistic_regression_calibrated.dart
+
 import 'dart:math';
+
+import 'package:rain_check/core/enum/flood_risk_level.dart';
 import 'package:rain_check/core/repository/flood_model/flood_data_model.dart';
 import 'package:rain_check/core/utils/flood_data_extensions.dart';
 
-/// Logistic Regression Model for Flood Risk Prediction
-///
-/// ✅ CALIBRATED FOR PUERTO PRINCESA CITY DATA
-/// Based on analysis of:
-/// - 66 barangays (35 urban, 31 rural)
-/// - 301 flood zones (95 high-risk, 105 moderate, 101 low)
-/// - Mean flood coverage: 31.8% of barangay area
-///
-/// Data Sources: MGB and DOST-NOAH
 class FloodRiskLogisticRegression {
-  // ✅ PRIVATE - proper encapsulation
-  late final Map<String, double> _coefficients;
-  late final double _intercept;
-  late final Map<String, double> _featureMeans;
-  late final Map<String, double> _featureStds;
+  static const double lowToModerate = 0.33;
+  static const double moderateToHigh = 0.66;
+
+  static const double confHigh = 0.20;
+  static const double confModerate = 0.10;
+
+  late final _ModelParams _params;
 
   FloodRiskLogisticRegression() {
-    _initializeModel();
+    _params = _ModelParams.defaultParams();
   }
 
-  /// Initialize model with coefficients calibrated for Puerto Princesa City
-  void _initializeModel() {
-    // ✅ UPDATED coefficients to include new features
-    _coefficients = {
-      'rainfall_mm': 0.018,
-      'high_risk_area_pct': 3.2,
-      'moderate_risk_area_pct': 1.5,
-      'low_risk_area_pct': 0.8, // ✅ NEW - lower weight than moderate
-      'total_flood_area_pct': 2.0,
-      'area_density': 1.2,
-      'is_urban': 0.6,
-      'rainfall_x_high_risk': 0.010,
-      'rainfall_x_moderate_risk': 0.006, // ✅ NEW - lower than high risk
-      'rainfall_x_low_risk': 0.003, // ✅ NEW - lowest interaction
-    };
+  double predictFloodProbability({
+    required double rainfallInMm,
+    required List<FloodFeature> floodFeatures,
+    required double totalBarangayArea,
+    required bool isUrban,
+  }) {
+    final raw = _extractFeatures(
+      rainfallInMm: rainfallInMm,
+      floodFeatures: floodFeatures,
+      totalBarangayArea: totalBarangayArea,
+      isUrban: isUrban,
+    );
 
-    // ✅ ADJUSTED intercept for better calibration
-    _intercept = -4.2; // More conservative baseline
-
-    _featureMeans = {
-      'rainfall_mm': 250.0,
-      'high_risk_area_pct': 9.73,
-      'moderate_risk_area_pct': 13.67,
-      'low_risk_area_pct': 8.40, // ✅ NEW - estimated from data
-      'total_flood_area_pct': 31.80,
-      'area_density': 0.0923,
-      'is_urban': 0.516,
-      'rainfall_x_high_risk': 2432.5,
-      'rainfall_x_moderate_risk': 3417.5, // ✅ NEW
-      'rainfall_x_low_risk': 2100.0, // ✅ NEW
-    };
-
-    _featureStds = {
-      'rainfall_mm': 75.0,
-      'high_risk_area_pct': 11.40,
-      'moderate_risk_area_pct': 18.29,
-      'low_risk_area_pct': 10.50, // ✅ NEW
-      'total_flood_area_pct': 23.58,
-      'area_density': 0.1738,
-      'is_urban': 0.50,
-      'rainfall_x_high_risk': 2850.0,
-      'rainfall_x_moderate_risk': 4575.0, // ✅ NEW
-      'rainfall_x_low_risk': 1575.0, // ✅ NEW
-    };
+    final z = _params.logit(raw);
+    return _sigmoid(z).clamp(0.0, 1.0);
   }
 
-  /// ✅ PRIVATE - Extract features from flood data
+  FloodRiskLevel classify(double p) {
+    if (p >= moderateToHigh) return FloodRiskLevel.high;
+    if (p >= lowToModerate) return FloodRiskLevel.moderate;
+    return FloodRiskLevel.low;
+  }
+
+  String confidence(double p) {
+    final d = min((p - lowToModerate).abs(), (p - moderateToHigh).abs());
+    if (d >= confHigh) return 'High';
+    if (d >= confModerate) return 'Moderate';
+    return 'Low';
+  }
+
   Map<String, double> _extractFeatures({
     required double rainfallInMm,
     required List<FloodFeature> floodFeatures,
@@ -76,165 +56,166 @@ class FloodRiskLogisticRegression {
     required bool isUrban,
   }) {
     if (floodFeatures.isEmpty || totalBarangayArea <= 0) {
-      return _getDefaultFeatures(rainfallInMm, isUrban);
+      return _params.zeroFeatures(rainfallInMm, isUrban);
     }
 
-    double highRiskArea = 0.0;
-    double moderateRiskArea = 0.0;
-    double lowRiskArea = 0.0;
-    double totalFloodArea = 0.0;
+    double hi = 0, mid = 0, low = 0;
 
-    for (var feature in floodFeatures) {
-      final area = feature.properties.areaInHas;
-      totalFloodArea += area;
-
-      switch (feature.properties.riskLevel) {
+    for (final f in floodFeatures) {
+      final a = f.properties.areaInHas;
+      switch (f.properties.riskLevel) {
         case FloodRiskLevel.high:
-          highRiskArea += area;
+          hi += a;
           break;
         case FloodRiskLevel.moderate:
-          moderateRiskArea += area;
+          mid += a;
           break;
         case FloodRiskLevel.low:
-          lowRiskArea += area;
-          break;
-        default:
+          low += a;
           break;
       }
     }
 
-    final highRiskPct = (highRiskArea / totalBarangayArea) * 100;
-    final moderateRiskPct = (moderateRiskArea / totalBarangayArea) * 100;
-    final lowRiskPct = (lowRiskArea / totalBarangayArea) * 100;
-    final totalFloodPct = (totalFloodArea / totalBarangayArea) * 100;
-    final areaDensity = floodFeatures.length / totalBarangayArea;
+    final hiPct = (hi / totalBarangayArea) * 100;
+    final midPct = (mid / totalBarangayArea) * 100;
+    final lowPct = (low / totalBarangayArea) * 100;
+
+    final density = floodFeatures.length / totalBarangayArea;
 
     return {
-      'rainfall_mm': rainfallInMm,
-      'high_risk_area_pct': highRiskPct,
-      'moderate_risk_area_pct': moderateRiskPct,
-      'low_risk_area_pct': lowRiskPct,
-      'total_flood_area_pct': totalFloodPct,
-      'area_density': areaDensity,
-      'is_urban': isUrban ? 1.0 : 0.0,
-      'rainfall_x_high_risk': rainfallInMm * highRiskPct,
-      'rainfall_x_moderate_risk': rainfallInMm * moderateRiskPct,
-      'rainfall_x_low_risk': rainfallInMm * lowRiskPct,
+      _F.rain: rainfallInMm,
+      _F.highPct: hiPct,
+      _F.modPct: midPct,
+      _F.lowPct: lowPct,
+      _F.density: density,
+      _F.urban: isUrban ? 1.0 : 0.0,
+      _F.rXHigh: rainfallInMm * hiPct,
+      _F.rXMod: rainfallInMm * midPct,
+      _F.rXLow: rainfallInMm * lowPct,
     };
   }
 
-  /// ✅ PRIVATE - Get default features
-  Map<String, double> _getDefaultFeatures(double rainfallInMm, bool isUrban) {
-    return {
-      'rainfall_mm': rainfallInMm,
-      'high_risk_area_pct': 0.0,
-      'moderate_risk_area_pct': 0.0,
-      'low_risk_area_pct': 0.0,
-      'total_flood_area_pct': 0.0,
-      'area_density': 0.0,
-      'is_urban': isUrban ? 1.0 : 0.0,
-      'rainfall_x_high_risk': 0.0,
-      'rainfall_x_moderate_risk': 0.0,
-      'rainfall_x_low_risk': 0.0,
-    };
-  }
-
-  /// ✅ PRIVATE - Normalize features
-  Map<String, double> _normalizeFeatures(Map<String, double> features) {
-    final normalized = <String, double>{};
-
-    for (var entry in features.entries) {
-      final key = entry.key;
-      final value = entry.value;
-      final mean = _featureMeans[key] ?? 0.0;
-      final std = _featureStds[key] ?? 1.0;
-
-      normalized[key] = (value - mean) / std;
-    }
-
-    return normalized;
-  }
-
-  /// ✅ PRIVATE - Sigmoid function
   double _sigmoid(double z) {
-    return 1.0 / (1.0 + exp(-z));
-  }
-
-  /// ✅ PRIVATE - Calculate logit
-  double _calculateLogit(Map<String, double> normalizedFeatures) {
-    double logit = _intercept;
-
-    for (var entry in normalizedFeatures.entries) {
-      final key = entry.key;
-      final value = entry.value;
-      final coef = _coefficients[key] ?? 0.0;
-
-      logit += coef * value;
+    if (z >= 0) {
+      final ez = exp(-z);
+      return 1.0 / (1.0 + ez);
+    } else {
+      final ez = exp(z);
+      return ez / (1.0 + ez);
     }
-
-    return logit;
   }
+}
 
-  /// ✅ PUBLIC - Main prediction method
-  double predictFloodProbability({
-    required double rainfallInMm,
-    required List<FloodFeature> floodFeatures,
-    required double totalBarangayArea,
-    required bool isUrban,
+class _F {
+  static const rain = 'rainfall_mm';
+  static const highPct = 'high_risk_area_pct';
+  static const modPct = 'moderate_risk_area_pct';
+  static const lowPct = 'low_risk_area_pct';
+  static const density = 'area_density';
+  static const urban = 'is_urban';
+  static const rXHigh = 'rainfall_x_high_risk';
+  static const rXMod = 'rainfall_x_moderate_risk';
+  static const rXLow = 'rainfall_x_low_risk';
+
+  static const all = <String>[
+    rain,
+    highPct,
+    modPct,
+    lowPct,
+    density,
+    urban,
+    rXHigh,
+    rXMod,
+    rXLow,
+  ];
+}
+
+class _ModelParams {
+  final double intercept;
+  final Map<String, double> coef;
+  final Map<String, double> mean;
+  final Map<String, double> std;
+
+  _ModelParams({
+    required this.intercept,
+    required this.coef,
+    required this.mean,
+    required this.std,
   }) {
-    final features = _extractFeatures(
-      rainfallInMm: rainfallInMm,
-      floodFeatures: floodFeatures,
-      totalBarangayArea: totalBarangayArea,
-      isUrban: isUrban,
+    _validate();
+  }
+
+  factory _ModelParams.defaultParams() {
+    return _ModelParams(
+      intercept: -4.2,
+      coef: {
+        _F.rain: 0.018,
+        _F.highPct: 3.2,
+        _F.modPct: 1.5,
+        _F.lowPct: 0.8,
+        _F.density: 1.2,
+        _F.urban: 0.6,
+        _F.rXHigh: 0.010,
+        _F.rXMod: 0.006,
+        _F.rXLow: 0.003,
+      },
+      mean: {
+        _F.rain: 250.0,
+        _F.highPct: 9.73,
+        _F.modPct: 13.67,
+        _F.lowPct: 8.40,
+        _F.density: 0.0923,
+        _F.urban: 0.516,
+        _F.rXHigh: 2432.5,
+        _F.rXMod: 3417.5,
+        _F.rXLow: 2100.0,
+      },
+      std: {
+        _F.rain: 75.0,
+        _F.highPct: 11.40,
+        _F.modPct: 18.29,
+        _F.lowPct: 10.50,
+        _F.density: 0.1738,
+        _F.urban: 0.50,
+        _F.rXHigh: 2850.0,
+        _F.rXMod: 4575.0,
+        _F.rXLow: 1575.0,
+      },
     );
-
-    final normalizedFeatures = _normalizeFeatures(features);
-    final logit = _calculateLogit(normalizedFeatures);
-    final probability = _sigmoid(logit);
-
-    // ✅ Clamp probability to reasonable range
-    return probability.clamp(0.0, 1.0);
   }
 
-  /// ✅ PUBLIC - Classify risk based on probability
-  FloodRiskLevel classifyRisk(double probability) {
-    if (probability >= 0.70) {
-      return FloodRiskLevel.high; // High: ≥70%
-    } else if (probability >= 0.40) {
-      return FloodRiskLevel.moderate; // Moderate: 40-70%
-    } else if (probability >= 0.20) {
-      return FloodRiskLevel.low; // Low: 20-40%
-    } else {
-      return FloodRiskLevel.unknown; // Very low: <20%
+  Map<String, double> zeroFeatures(double rainfall, bool isUrban) => {
+    _F.rain: rainfall,
+    _F.highPct: 0,
+    _F.modPct: 0,
+    _F.lowPct: 0,
+    _F.density: 0,
+    _F.urban: isUrban ? 1 : 0,
+    _F.rXHigh: 0,
+    _F.rXMod: 0,
+    _F.rXLow: 0,
+  };
+
+  double logit(Map<String, double> raw) {
+    var z = intercept;
+
+    for (final k in _F.all) {
+      final v = raw[k] ?? 0.0;
+      final m = mean[k]!;
+      final s = std[k]!;
+      final x = s == 0 ? 0.0 : (v - m) / s;
+      z += (coef[k] ?? 0.0) * x;
     }
+    return z;
   }
 
-  /// ✅ PUBLIC - Get confidence score
-  String getRiskConfidence(double probability) {
-    if (probability >= 0.85 || probability <= 0.10) {
-      return 'Very High';
-    } else if (probability >= 0.75 || probability <= 0.20) {
-      return 'High';
-    } else if (probability >= 0.60 || probability <= 0.35) {
-      return 'Moderate';
-    } else {
-      return 'Low';
+  void _validate() {
+    final keys = _F.all.toSet();
+    if (!coef.keys.toSet().containsAll(keys) ||
+        !mean.keys.toSet().containsAll(keys) ||
+        !std.keys.toSet().containsAll(keys)) {
+      throw StateError('Model params missing keys. Expected: $keys');
     }
-  }
-
-  /// ✅ PUBLIC - Get model info
-  String getModelInfo() {
-    return '''
-Puerto Princesa City Flood Risk Model
-======================================
-Calibrated on: 66 barangays, 301 flood zones
-Data sources: MGB and DOST-NOAH
-Urban areas: 51.6%
-Mean flood coverage: 31.8%
-
-Model Version: 2.0.0 (Enhanced)
-''';
   }
 }
 
@@ -248,7 +229,7 @@ class LogisticFloodResult {
   final String message;
   final double? affectedAreaHectares;
 
-  LogisticFloodResult({
+  const LogisticFloodResult({
     required this.barangayName,
     required this.rainfallInMm,
     required this.floodProbability,
@@ -258,15 +239,11 @@ class LogisticFloodResult {
     this.affectedAreaHectares,
   });
 
-  String get formattedProbability {
-    return '${(floodProbability * 100).toStringAsFixed(1)}%';
-  }
+  String get formattedProbability =>
+      '${(floodProbability * 100).toStringAsFixed(1)}%';
 
-  String get riskLevelDisplay {
-    return predictedRiskLevel.displayName;
-  }
+  String get riskLevelDisplay => predictedRiskLevel.displayName;
 
-  bool get hasFloodRisk {
-    return floodProbability >= 0.20; // 20% threshold
-  }
+  bool get hasFloodRisk =>
+      floodProbability >= FloodRiskLogisticRegression.lowToModerate;
 }
