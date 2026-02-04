@@ -153,6 +153,7 @@ class _FloodRiskMapState extends State<FloodRiskMap> {
           Polygon(
             points: ring,
             color: poly.fillColor,
+            isFilled: true,
             borderColor: poly.borderColor,
             borderStrokeWidth: 2.0,
           ),
