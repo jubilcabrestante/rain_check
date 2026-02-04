@@ -8,9 +8,9 @@ part of 'rainfall_data_model.dart';
 
 RainfallDataPoint _$RainfallDataPointFromJson(Map<String, dynamic> json) =>
     RainfallDataPoint(
-      year: (json['YEAR'] as num).toInt(),
-      month: (json['MONTH'] as num).toInt(),
-      day: (json['DAY'] as num).toInt(),
+      year: RainfallDataPoint._intFromCsv(json['YEAR']),
+      month: RainfallDataPoint._intFromCsv(json['MONTH']),
+      day: RainfallDataPoint._intFromCsv(json['DAY']),
       rainfall: RainfallDataPoint._rainfallFromCsv(json['RAINFALL']),
       tmax: RainfallDataPoint._nullableDoubleFromCsv(json['TMAX']),
       tmin: RainfallDataPoint._nullableDoubleFromCsv(json['TMIN']),

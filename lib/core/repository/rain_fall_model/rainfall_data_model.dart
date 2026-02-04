@@ -6,13 +6,13 @@ part 'rainfall_data_model.g.dart';
 
 @JsonSerializable()
 class RainfallDataPoint {
-  @JsonKey(name: 'YEAR')
+  @JsonKey(name: 'YEAR', fromJson: _intFromCsv)
   final int year;
 
-  @JsonKey(name: 'MONTH')
+  @JsonKey(name: 'MONTH', fromJson: _intFromCsv)
   final int month;
 
-  @JsonKey(name: 'DAY')
+  @JsonKey(name: 'DAY', fromJson: _intFromCsv)
   final int day;
 
   /// -999.0 = missing
@@ -55,6 +55,19 @@ class RainfallDataPoint {
 
   Map<String, dynamic> toJson() => _$RainfallDataPointToJson(this);
 
+  // ✅ NEW: parse int from csv string/num
+  static int _intFromCsv(dynamic v) {
+    if (v == null) return 0;
+    if (v is int) return v;
+    if (v is num) return v.toInt();
+    if (v is String) {
+      final s = v.trim();
+      if (s.isEmpty) return 0;
+      return int.tryParse(s) ?? 0;
+    }
+    return 0;
+  }
+
   static double _rainfallFromCsv(dynamic v) {
     final d = _doubleOrNull(v);
     if (d == null) return 0.0;
@@ -74,7 +87,6 @@ class RainfallDataPoint {
   static double? _doubleOrNull(dynamic v) {
     if (v == null) return null;
     if (v is num) return v.toDouble();
-
     if (v is String) {
       final s = v.trim();
       if (s.isEmpty) return null;

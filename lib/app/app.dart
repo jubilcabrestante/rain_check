@@ -12,7 +12,7 @@ import 'package:rain_check/core/repository/auth_user_repository.dart';
 import 'package:rain_check/features/calculate/domain/cubit/calculate_cubit.dart';
 import 'package:rain_check/features/calculate/widgets/flood_data_service.dart';
 import 'package:rain_check/features/otp_verification/domain/cubit/verification_cubit.dart';
-import 'package:rain_check/features/predict/domain/predict_cubit.dart';
+// import 'package:rain_check/features/predict/domain/predict_cubit.dart';
 import 'package:responsive_framework/responsive_framework.dart';
 
 class MainApp extends StatefulWidget {
