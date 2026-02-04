@@ -15,11 +15,7 @@ class Failure extends Equatable {
 
   @override
   // TODO: implement props
-  List<Object?> get props => [
-        isSuccess,
-        errorMesage,
-        statusCode,
-      ];
+  List<Object?> get props => [isSuccess, errorMesage, statusCode];
 }
 
 // external error
@@ -30,6 +26,7 @@ class ApiFailure extends Failure {
     super.data,
   });
 }
+
 /*
 {
 	"membershipId": null,

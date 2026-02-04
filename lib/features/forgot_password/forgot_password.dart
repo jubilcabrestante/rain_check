@@ -39,7 +39,6 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
       ),
       body: BlocConsumer<AuthUserCubit, AuthUserState>(
         listener: (context, state) {
-          // TODO: implement listener
           if (state.status == AuthStatus.passwordResetSent) {
             showSnackBar(
               context,

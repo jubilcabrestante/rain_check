@@ -44,7 +44,6 @@ class _SignupScreenState extends State<SignupScreen> {
             padding: const EdgeInsets.all(24),
             child: BlocConsumer<AuthUserCubit, AuthUserState>(
               listener: (context, state) {
-                // TODO: implement listener
                 // successfull
                 if (state.status == AuthStatus.successRegistration) {
                   showSnackBar(

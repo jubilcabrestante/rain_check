@@ -90,8 +90,9 @@ class _CalculateScreenState extends State<CalculateScreen> {
                         options: vm.options,
                         optionLabel: (e) => e,
                         onChanged: (v) {
-                          if (v != null)
+                          if (v != null) {
                             context.read<CalculateCubit>().setBarangay(v);
+                          }
                         },
                       );
                     },

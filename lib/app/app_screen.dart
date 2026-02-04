@@ -4,11 +4,13 @@ import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:gap/gap.dart';
-import 'package:rain_check/app/logout_dialog.dart';
+
+import 'package:rain_check/app/widgets/logout_dialog.dart';
 import 'package:rain_check/app/router/router.gr.dart';
 import 'package:rain_check/app/themes/colors.dart';
 import 'package:rain_check/core/domain/cubit/auth_user_cubit.dart';
 import 'package:rain_check/core/utils/name_formatter.dart';
+import 'package:rain_check/app/widgets/weather_header.dart';
 
 @RoutePage()
 class MainAppScreen extends StatefulWidget {
@@ -20,9 +22,7 @@ class MainAppScreen extends StatefulWidget {
 
 class _MainAppScreenState extends State<MainAppScreen>
     with WidgetsBindingObserver {
-  final String location = "";
-
-  final List<_NavItem> navList = const [
+  static const List<_NavItem> _navList = [
     _NavItem(
       title: "Calculate",
       route: CalculateRoute(),
@@ -44,7 +44,6 @@ class _MainAppScreenState extends State<MainAppScreen>
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-
     log("MainAppScreen initialized");
   }
 
@@ -65,14 +64,13 @@ class _MainAppScreenState extends State<MainAppScreen>
 
   @override
   Widget build(BuildContext context) {
-    var theme = Theme.of(context);
-    return BlocConsumer<AuthUserCubit, AuthUserState>(
-      listener: (context, state) {
-        // TODO: implement listener
-      },
+    final theme = Theme.of(context);
+
+    return BlocBuilder<AuthUserCubit, AuthUserState>(
       builder: (context, state) {
-        var fullName = state.currentUser?.fullName;
-        var profileImage = state.currentUser?.profilePictureUrl;
+        final fullName = state.currentUser?.fullName ?? '';
+        final profileImage = state.currentUser?.profilePictureUrl;
+
         return Scaffold(
           appBar: AppBar(
             backgroundColor: AppColors.background,
@@ -93,15 +91,14 @@ class _MainAppScreenState extends State<MainAppScreen>
                         ),
                       ),
                       Text(
-                        NameFormatter.formatFullName(fullName.toString()),
+                        NameFormatter.formatFullName(fullName),
                         style: theme.textTheme.titleMedium,
                       ),
                     ],
                   ),
                   const Spacer(),
                   GestureDetector(
-                    onTap: () =>
-                        LogoutDialog.show(context), // <-- show the dialog
+                    onTap: () => LogoutDialog.show(context),
                     child: CircleAvatar(
                       radius: 20,
                       child: profileImage != null
@@ -122,48 +119,19 @@ class _MainAppScreenState extends State<MainAppScreen>
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                _WeatherHeader(),
+                const WeatherHeader(),
                 const Gap(20),
                 Text("Quick Actions", style: theme.textTheme.titleMedium),
                 const Gap(8),
                 Expanded(
                   child: ListView.builder(
-                    padding: EdgeInsets.symmetric(vertical: 5),
-                    itemCount: navList.length,
+                    padding: const EdgeInsets.symmetric(vertical: 5),
+                    itemCount: _navList.length,
                     itemBuilder: (context, index) {
-                      final item = navList[index];
+                      final item = _navList[index];
                       return Padding(
-                        padding: EdgeInsets.only(bottom: 10),
-                        child: Container(
-                          padding: EdgeInsets.symmetric(
-                            horizontal: 8,
-                            vertical: 8,
-                          ),
-                          decoration: BoxDecoration(
-                            color: AppColors.textWhite,
-                            borderRadius: BorderRadius.circular(15),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withValues(alpha: 0.1),
-                                blurRadius: 8,
-                                spreadRadius: 2,
-                                offset: const Offset(0, 4),
-                              ),
-                            ],
-                          ),
-                          child: ListTile(
-                            leading: CircleAvatar(
-                              backgroundColor: AppColors.lighttGrey,
-                              child: Icon(
-                                item.icon as IconData?,
-                                color: AppColors.primary,
-                              ),
-                            ),
-                            title: Text(item.title),
-                            trailing: const Icon(Icons.arrow_forward),
-                            onTap: () => context.router.push(item.route),
-                          ),
-                        ),
+                        padding: const EdgeInsets.only(bottom: 10),
+                        child: _NavCard(item: item),
                       );
                     },
                   ),
@@ -177,155 +145,34 @@ class _MainAppScreenState extends State<MainAppScreen>
   }
 }
 
-/// Weather header widget
-class _WeatherHeader extends StatefulWidget {
-  const _WeatherHeader();
+class _NavCard extends StatelessWidget {
+  final _NavItem item;
+  const _NavCard({required this.item});
 
-  @override
-  State<_WeatherHeader> createState() => _WeatherHeaderState();
-}
-
-class _WeatherHeaderState extends State<_WeatherHeader> {
   @override
   Widget build(BuildContext context) {
-    // TODO: Implement dynamic data here
-    var location = "Puerto Princesa City";
-    var accummulation = 5;
-    var temperature = 27;
-    var chanceOfRain = 20;
-
-    // light, moderate and heavy
-    var rainAmount = "";
-
-    final theme = Theme.of(context);
-
-    return Card(
-      elevation: 6,
-      child: Padding(
-        padding: const EdgeInsets.all(15),
-        child: Stack(
-          children: [
-            // MAIN CONTENT
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Location
-                Row(
-                  children: [
-                    const Icon(
-                      Icons.pin_drop,
-                      size: 28,
-                      color: AppColors.textWhite,
-                    ),
-                    const Gap(8),
-                    Text(
-                      location,
-                      style: theme.textTheme.bodyLarge?.copyWith(
-                        color: AppColors.textWhite,
-                      ),
-                    ),
-                  ],
-                ),
-
-                const Gap(8),
-
-                Text(
-                  "Today's Forecast",
-                  style: theme.textTheme.titleLarge?.copyWith(
-                    color: AppColors.textGrey,
-                  ),
-                ),
-
-                const Gap(16),
-
-                // Rain info
-                Row(
-                  children: [
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            Icon(
-                              Icons.cloudy_snowing,
-                              size: 35,
-                              color: AppColors.textWhite,
-                            ),
-                            Gap(12),
-                            Text(
-                              "$chanceOfRain%",
-                              style: theme.textTheme.titleLarge?.copyWith(
-                                color: AppColors.textWhite,
-                              ),
-                            ),
-                          ],
-                        ),
-                        Gap(12),
-                        Text(
-                          "$rainAmount showers expected",
-                          style: theme.textTheme.bodyMedium?.copyWith(
-                            color: AppColors.textGrey,
-                          ),
-                        ),
-                        Text(
-                          "Accumulation: $accummulation",
-                          style: theme.textTheme.bodySmall?.copyWith(
-                            color: AppColors.textGrey,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-
-                const Gap(24), // leave room for bottom-right content
-              ],
-            ),
-
-            // TEMPERATURE (BOTTOM RIGHT)
-            Positioned(
-              right: 8,
-              bottom: 8,
-              child: Row(
-                children: [
-                  const Icon(
-                    Icons.thermostat,
-                    size: 40,
-                    color: AppColors.textWhite,
-                  ),
-                  const Gap(6),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text(
-                        "Now",
-                        style: TextStyle(
-                          fontSize: 16,
-                          color: AppColors.textWhite,
-                        ),
-                      ),
-                      Text(
-                        "$temperature °C",
-                        style: const TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                          color: AppColors.textWhite,
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-
-            // WATER DROP ICON (TOP RIGHT)
-            const Positioned(
-              top: 8,
-              right: 8,
-              child: Icon(Icons.water_drop, size: 70, color: AppColors.primary),
-            ),
-          ],
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+      decoration: BoxDecoration(
+        color: AppColors.textWhite,
+        borderRadius: BorderRadius.circular(15),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.1),
+            blurRadius: 8,
+            spreadRadius: 2,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: ListTile(
+        leading: CircleAvatar(
+          backgroundColor: AppColors.lighttGrey,
+          child: Icon(item.icon, color: AppColors.primary),
         ),
+        title: Text(item.title),
+        trailing: const Icon(Icons.arrow_forward),
+        onTap: () => context.router.push(item.route),
       ),
     );
   }

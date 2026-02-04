@@ -328,7 +328,9 @@ class ModelParamsBuilder {
   static double _mean(List<double> a) {
     if (a.isEmpty) return 0;
     var s = 0.0;
-    for (final v in a) s += v;
+    for (final v in a) {
+      s += v;
+    }
     return s / a.length;
   }
 

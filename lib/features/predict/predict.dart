@@ -2,12 +2,9 @@ import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:gap/gap.dart';
-
 import 'package:rain_check/app/themes/colors.dart';
 import 'package:rain_check/core/shared/app_custom_button.dart';
 import 'package:rain_check/core/shared/app_drop_down_field.dart';
-import 'package:rain_check/core/utils/data_loader.dart';
-import 'package:rain_check/features/predict/data/monte_carlo_flood_service.dart';
 import 'package:rain_check/features/predict/domain/predict_cubit.dart';
 import 'package:rain_check/features/predict/widgets/flood_risk_map.dart';
 import 'package:rain_check/features/predict/widgets/week_range_picker.dart';
@@ -15,21 +12,6 @@ import 'package:rain_check/features/predict/widgets/week_range_picker.dart';
 @RoutePage()
 class PredictScreen extends StatelessWidget {
   const PredictScreen({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return BlocProvider(
-      create: (_) => PredictCubit(
-        loader: const DataLoader(),
-        monteCarloService: const MonteCarloFloodService(iterations: 1000),
-      )..loadData(),
-      child: const _PredictView(),
-    );
-  }
-}
-
-class _PredictView extends StatelessWidget {
-  const _PredictView();
 
   @override
   Widget build(BuildContext context) {

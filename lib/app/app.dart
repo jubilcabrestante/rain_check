@@ -4,19 +4,23 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import 'package:rain_check/app/domain/cubit/weather_cubit.dart';
 import 'package:rain_check/app/router/router.dart';
 import 'package:rain_check/app/themes/themes.dart';
 import 'package:rain_check/core/domain/cubit/auth_user_cubit.dart';
 import 'package:rain_check/core/domain/i_auth_user_repository.dart';
 import 'package:rain_check/core/repository/auth_user_repository.dart';
+import 'package:rain_check/core/services/open_meteo_weather_service.dart';
+import 'package:rain_check/core/utils/data_loader.dart';
 import 'package:rain_check/features/calculate/domain/cubit/calculate_cubit.dart';
 import 'package:rain_check/features/calculate/widgets/flood_data_service.dart';
 import 'package:rain_check/features/otp_verification/domain/cubit/verification_cubit.dart';
-// import 'package:rain_check/features/predict/domain/predict_cubit.dart';
+import 'package:rain_check/features/predict/data/monte_carlo_flood_service.dart';
+import 'package:rain_check/features/predict/domain/predict_cubit.dart';
 import 'package:responsive_framework/responsive_framework.dart';
 
 class MainApp extends StatefulWidget {
-  const MainApp({super.key}); // ✅ Removed googleSignIn parameter
+  const MainApp({super.key});
 
   @override
   State<MainApp> createState() => _MainAppState();
@@ -29,7 +33,13 @@ class _MainAppState extends State<MainApp> {
   late AuthUserCubit _authUserCubit;
   late VerificationCubit _verificationCubit;
   late CalculateCubit _calculateCubit;
-  // late PredictCubit _predictCubit;
+  late WeatherHeaderCubit _weatherHeaderCubit;
+  late PredictCubit _predictCubit;
+
+  // Services / loaders
+  final loader = const DataLoader();
+  final weather = OpenMeteoWeatherService();
+  final monteCarloService = MonteCarloFloodService(iterations: 1000);
 
   @override
   void initState() {
@@ -38,7 +48,7 @@ class _MainAppState extends State<MainApp> {
     // ✅ Initialize all dependencies
     final firebaseAuth = FirebaseAuth.instance;
     final firestore = FirebaseFirestore.instance;
-    final googleSignIn = GoogleSignIn.instance; // ✅ Use the singleton instance
+    final googleSignIn = GoogleSignIn.instance;
     final floodData = FloodDataService();
     // Initialize repository
     authUserRepository = AuthUserRepository(
@@ -54,13 +64,21 @@ class _MainAppState extends State<MainApp> {
       authUserCubit: _authUserCubit,
     );
     _calculateCubit = CalculateCubit(service: floodData);
-    // _predictCubit = PredictCubit();
+    _predictCubit = PredictCubit(
+      loader: loader,
+      monteCarloService: monteCarloService,
+    )..loadData();
+    _weatherHeaderCubit = WeatherHeaderCubit(loader: loader, weather: weather)
+      ..init();
   }
 
   @override
   void dispose() {
-    _authUserCubit.close();
+    _weatherHeaderCubit.close();
+    _calculateCubit.close();
     _verificationCubit.close();
+    _predictCubit.close();
+    _authUserCubit.close();
     super.dispose();
   }
 
@@ -79,7 +97,8 @@ class _MainAppState extends State<MainApp> {
           BlocProvider<AuthUserCubit>.value(value: _authUserCubit),
           BlocProvider<VerificationCubit>.value(value: _verificationCubit),
           BlocProvider<CalculateCubit>.value(value: _calculateCubit),
-          // BlocProvider<PredictCubit>.value(value: _predictCubit),
+          BlocProvider<PredictCubit>.value(value: _predictCubit),
+          BlocProvider<WeatherHeaderCubit>.value(value: _weatherHeaderCubit),
         ],
         child: MaterialApp.router(
           debugShowCheckedModeBanner: false,
