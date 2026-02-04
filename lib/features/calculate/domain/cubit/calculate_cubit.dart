@@ -13,13 +13,19 @@ class CalculateCubit extends Cubit<CalculateState> {
   CalculateCubit({required FloodDataService service})
     : _service = service,
       super(const CalculateState()) {
-    loadBarangays();
+    _bootstrap();
+  }
+
+  Future<void> _bootstrap() async {
+    await loadBarangays();
   }
 
   Future<void> loadBarangays() async {
     emit(state.copyWith(loadingBarangays: true, errorMessage: null));
 
     final result = await _safeCall(() async {
+      // ✅ Ensure files are loaded and model is calibrated from files
+      await _service.initialize();
       return _service.getAllBarangayNames();
     });
 
@@ -35,7 +41,6 @@ class CalculateCubit extends Cubit<CalculateState> {
     emit(state.copyWith(selectedBarangay: value));
   }
 
-  // ✅ NEW: typed rainfall
   void setRainfallMm(double? mm) {
     emit(state.copyWith(rainfallInMm: mm));
   }
@@ -59,7 +64,6 @@ class CalculateCubit extends Cubit<CalculateState> {
       return;
     }
 
-    // optional sanity cap
     if (mm > 1000) {
       emit(
         state.copyWith(errorMessage: 'Rainfall seems too high ( > 1000mm )'),
@@ -70,9 +74,11 @@ class CalculateCubit extends Cubit<CalculateState> {
     emit(state.copyWith(calculating: true, result: null, errorMessage: null));
 
     final result = await _safeCall(() async {
+      // ✅ All barangay geometry + flood hazard areas are taken from GeoJSON files.
+      // ✅ Only rainfallInMm is user input here (not random).
       return _service.calculateFloodRiskML(
         barangayName: barangay,
-        rainfallInMm: mm, // ✅ updated call
+        rainfallInMm: mm,
       );
     });
 
