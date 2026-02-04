@@ -11,7 +11,7 @@ RainfallDataPoint _$RainfallDataPointFromJson(Map<String, dynamic> json) =>
       year: RainfallDataPoint._intFromCsv(json['YEAR']),
       month: RainfallDataPoint._intFromCsv(json['MONTH']),
       day: RainfallDataPoint._intFromCsv(json['DAY']),
-      rainfall: RainfallDataPoint._rainfallFromCsv(json['RAINFALL']),
+      rainfall: RainfallDataPoint._doubleFromCsv(json['RAINFALL']),
       tmax: RainfallDataPoint._nullableDoubleFromCsv(json['TMAX']),
       tmin: RainfallDataPoint._nullableDoubleFromCsv(json['TMIN']),
       relativeHumidity: RainfallDataPoint._nullableDoubleFromCsv(json['RH']),

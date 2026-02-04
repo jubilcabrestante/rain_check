@@ -3,29 +3,31 @@ part of 'predict_cubit.dart';
 @freezed
 abstract class PredictState with _$PredictState {
   const factory PredictState({
-    // ✅ used by loadData()
+    // Asset loading
     @Default(false) bool loading,
 
-    // ✅ used by predict()
+    // Monte Carlo running
     @Default(false) bool predicting,
 
-    // ✅ shared error channel
+    // UI flags
+    @Default(false) bool showInfoPin,
+
+    // Error channel
     String? errorMessage,
 
-    // ✅ used by UI + predict()
-    DateTimeRange? selectedRange,
-
-    // ✅ used after loading boundaries
+    // Data needed by UI
     BarangayBoundariesCollection? boundaries,
-
-    // ✅ used for dropdown list
     @Default(<String>[]) List<String> barangayOptions,
-
-    // ✅ used for selection validation
-    @Default('') String selectedBarangay,
-
-    // ✅ used by map coloring / results
     @Default(<String, BarangayFloodRisk>{})
     Map<String, BarangayFloodRisk> riskMap,
+
+    // User selection
+    @Default('') String selectedBarangay,
+    DateTimeRange? selectedRange,
+
+    // “stale results” logic
+    @Default(true) bool resultsStale,
+    DateTimeRange? lastPredictedRange,
+    @Default('') String lastPredictedBarangay,
   }) = _PredictState;
 }

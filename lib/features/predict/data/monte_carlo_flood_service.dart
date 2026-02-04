@@ -1,148 +1,182 @@
 import 'dart:math';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+
 import 'package:rain_check/core/enum/flood_risk_level.dart';
+import 'package:rain_check/core/repository/flood_model/barangay_boundaries_model.dart';
 import 'package:rain_check/core/repository/flood_model/flood_data_model.dart';
 import 'package:rain_check/core/repository/rain_fall_model/rainfall_data_model.dart';
 import 'package:rain_check/core/utils/flood_data_extensions.dart';
 import 'package:rain_check/features/predict/domain/models/barangay_flood_risk.dart';
 
 class MonteCarloFloodService {
-  final Random _random;
   final int iterations;
 
-  // ✅ NOT const (because Random() isn't const)
-  MonteCarloFloodService({Random? random, this.iterations = 500})
-    : _random = random ?? Random();
+  /// iterations controls stability/smoothness.
+  /// 500–2000 is usually fine for mobile.
+  const MonteCarloFloodService({this.iterations = 1000});
 
-  Map<String, BarangayFloodRisk> monteCarlo({
-    required DateTimeRange range,
-    required List<String> barangayNames,
-    required FloodDataCollection floodData,
-    required RainfallDataCollection rainfallData,
-  }) {
-    final dayCount = range.duration.inDays + 1;
-    final rainfallPool = _buildRainfallPool(range, rainfallData);
-
-    final map = <String, BarangayFloodRisk>{};
-    for (final name in barangayNames) {
-      final features = floodData.getFeaturesForBarangay(name);
-      map[name] = _simulateBarangay(
-        barangayName: name,
-        dayCount: dayCount,
-        rainfallPool: rainfallPool,
-        floodFeatures: features,
-      );
-    }
-    return map;
-  }
-
-  BarangayFloodRisk _simulateBarangay({
+  /// ✅ Data-driven Monte Carlo:
+  /// - Rainfall samples come from your CSV (month/day filtered)
+  /// - Hazard base is from HF/MF/LF polygon areas vs barangay area
+  /// - Heavy loop runs in background isolate (`compute`)
+  Future<BarangayFloodRisk> simulateBarangay({
     required String barangayName,
-    required int dayCount,
-    required List<RainfallDataPoint> rainfallPool,
+    required DateTimeRange range,
+    required BarangayBoundaryFeature boundary,
     required List<FloodFeature> floodFeatures,
-  }) {
-    if (dayCount <= 0 || rainfallPool.isEmpty || iterations <= 0) {
+    required RainfallDataCollection rainfallData,
+  }) async {
+    final dayCount = range.duration.inDays + 1;
+    if (dayCount <= 0 || iterations <= 0) {
       return BarangayFloodRisk.defaultLow(barangayName);
     }
 
-    final baseRisk = _baseRiskScore(floodFeatures);
-    var totalRainfall = 0.0;
-    var totalProbability = 0.0;
+    final areaHa = _barangayAreaHa(boundary);
+    final hazard = _hazardPercents(
+      floodFeatures: floodFeatures,
+      barangayAreaHa: areaHa,
+    );
 
-    for (var i = 0; i < iterations; i++) {
-      final avgRain = _simulateAverageRainfall(dayCount, rainfallPool);
-      final probability = _probabilityFrom(baseRisk, avgRain);
-      totalRainfall += avgRain;
-      totalProbability += probability;
+    final pool = _buildRainfallPoolMm(range, rainfallData);
+    if (pool.isEmpty) {
+      return BarangayFloodRisk.defaultLow(barangayName);
     }
 
-    final avgRainfall = totalRainfall / iterations;
-    final avgProbability = totalProbability / iterations;
+    // Deterministic seed so results are stable for same inputs
+    final seed = _stableSeed(barangayName, range, iterations);
+
+    final out = await compute(_mcWorker, <String, Object?>{
+      'iterations': iterations,
+      'dayCount': dayCount,
+      'seed': seed,
+      'rainPool': pool,
+      'hfPct': hazard.hfPct,
+      'mfPct': hazard.mfPct,
+      'lfPct': hazard.lfPct,
+    });
+
+    final avgRain = (out['avgRain'] as double).clamp(0.0, 10000.0);
+    final avgProb = (out['avgProb'] as double).clamp(0.0, 1.0);
 
     return BarangayFloodRisk(
       barangayName: barangayName,
-      riskLevel: _riskLevelFromProbability(avgProbability),
-      floodProbability: avgProbability * 100,
-      rainfallIntensity: avgRainfall,
-      rainfallCategory: _rainCategoryFromIntensity(avgRainfall),
+      riskLevel: _riskLevelFromProbability(avgProb),
+      floodProbability: avgProb * 100,
+      rainfallIntensity: avgRain,
+      rainfallCategory: _rainCategoryFromIntensity(avgRain),
     );
   }
 
-  double _simulateAverageRainfall(
-    int dayCount,
-    List<RainfallDataPoint> rainfallPool,
-  ) {
-    var sum = 0.0;
-    for (var d = 0; d < dayCount; d++) {
-      final pick = rainfallPool[_random.nextInt(rainfallPool.length)];
-      sum += pick.rainfall;
+  // --------------------------
+  // Hazard from HF/MF/LF coverage
+  // --------------------------
+  _Hazard _hazardPercents({
+    required List<FloodFeature> floodFeatures,
+    required double barangayAreaHa,
+  }) {
+    if (barangayAreaHa <= 0 || floodFeatures.isEmpty) {
+      return const _Hazard();
     }
-    return sum / dayCount;
+
+    var hf = 0.0;
+    var mf = 0.0;
+    var lf = 0.0;
+
+    for (final f in floodFeatures) {
+      final a = f.properties.areaInHas;
+      if (a <= 0) continue;
+
+      switch (f.properties.riskLevel) {
+        case FloodRiskLevel.high:
+          hf += a;
+          break;
+        case FloodRiskLevel.moderate:
+          mf += a;
+          break;
+        case FloodRiskLevel.low:
+          lf += a;
+          break;
+      }
+    }
+
+    return _Hazard(
+      hfPct: (hf / barangayAreaHa).clamp(0.0, 1.0),
+      mfPct: (mf / barangayAreaHa).clamp(0.0, 1.0),
+      lfPct: (lf / barangayAreaHa).clamp(0.0, 1.0),
+    );
   }
 
-  List<RainfallDataPoint> _buildRainfallPool(
-    DateTimeRange range,
-    RainfallDataCollection rainfallData,
-  ) {
-    final filtered = rainfallData.data
-        .where((point) => _dateMatchesRange(point, range))
-        .toList();
+  double _barangayAreaHa(BarangayBoundaryFeature b) {
+    // Prefer Area_has (already ha) then fallback AreaInHect
+    final a1 = b.properties.areaHas;
+    if (a1 > 0) return a1;
+    final a2 = b.properties.areaInHect;
+    return a2 > 0 ? a2 : 0.0;
+  }
 
-    return filtered.isNotEmpty ? filtered : rainfallData.data;
+  // --------------------------
+  // Rainfall pool (mm) from CSV
+  // --------------------------
+  List<double> _buildRainfallPoolMm(
+    DateTimeRange range,
+    RainfallDataCollection data,
+  ) {
+    final picked = <double>[];
+
+    for (final p in data.data) {
+      if (!_dateMatchesRange(p, range)) continue;
+
+      final mm = p.rainfallMm; // cleaned (handles -999/-1)
+      if (mm != null) picked.add(mm);
+    }
+
+    if (picked.isNotEmpty) return picked;
+
+    // Fallback: use all available cleaned rainfall
+    for (final p in data.data) {
+      final mm = p.rainfallMm;
+      if (mm != null) picked.add(mm);
+    }
+
+    return picked;
   }
 
   bool _dateMatchesRange(RainfallDataPoint point, DateTimeRange range) {
+    // Compare by month/day only (climatology style)
     final pointDay = DateTime(2000, point.month, point.day);
     final startDay = DateTime(2000, range.start.month, range.start.day);
     final endDay = DateTime(2000, range.end.month, range.end.day);
 
+    // Wrap-around ranges (Dec -> Jan)
     if (endDay.isBefore(startDay)) {
       return _isOnOrAfter(pointDay, startDay) ||
           _isOnOrBefore(pointDay, endDay);
     }
+
     return _isOnOrAfter(pointDay, startDay) && _isOnOrBefore(pointDay, endDay);
   }
 
   bool _isOnOrAfter(DateTime a, DateTime b) =>
       a.isAfter(b) || a.isAtSameMomentAs(b);
-
   bool _isOnOrBefore(DateTime a, DateTime b) =>
       a.isBefore(b) || a.isAtSameMomentAs(b);
 
-  double _baseRiskScore(List<FloodFeature> floodFeatures) {
-    if (floodFeatures.isEmpty) return 0.15;
-
-    var totalArea = 0.0;
-    var weighted = 0.0;
-
-    for (final feature in floodFeatures) {
-      final area = feature.properties.areaInHas;
-      totalArea += area;
-      weighted += area * _riskWeight(feature.properties.riskLevel);
+  int _stableSeed(String name, DateTimeRange r, int iters) {
+    final s =
+        '${name.trim().toLowerCase()}|${r.start.month}-${r.start.day}|${r.end.month}-${r.end.day}|$iters';
+    // simple stable hash
+    var h = 0;
+    for (final c in s.codeUnits) {
+      h = (h * 31 + c) & 0x7fffffff;
     }
-
-    if (totalArea <= 0) return 0.15;
-    return (weighted / totalArea).clamp(0.05, 0.95);
+    return h;
   }
 
-  double _riskWeight(FloodRiskLevel level) {
-    return switch (level) {
-      FloodRiskLevel.low => 0.25,
-      FloodRiskLevel.moderate => 0.55,
-      FloodRiskLevel.high => 0.85,
-    };
-  }
-
-  double _probabilityFrom(double baseRisk, double avgRainfall) {
-    final rainFactor = (avgRainfall / 120).clamp(0.0, 1.0);
-    return (baseRisk * 0.65 + rainFactor * 0.35).clamp(0.0, 1.0);
-  }
-
-  FloodRiskLevel _riskLevelFromProbability(double probability) {
-    if (probability >= 0.6) return FloodRiskLevel.high;
-    if (probability >= 0.3) return FloodRiskLevel.moderate;
+  FloodRiskLevel _riskLevelFromProbability(double p) {
+    if (p >= 0.60) return FloodRiskLevel.high;
+    if (p >= 0.30) return FloodRiskLevel.moderate;
     return FloodRiskLevel.low;
   }
 
@@ -151,4 +185,61 @@ class MonteCarloFloodService {
     if (intensity >= 10) return RainAmount.moderate;
     return RainAmount.low;
   }
+}
+
+class _Hazard {
+  final double hfPct;
+  final double mfPct;
+  final double lfPct;
+  const _Hazard({this.hfPct = 0, this.mfPct = 0, this.lfPct = 0});
+}
+
+/// Runs in background isolate.
+/// Input/Output must be sendable => Map/List/num/bool/String only.
+Map<String, double> _mcWorker(Map<String, Object?> job) {
+  final iterations = job['iterations'] as int;
+  final dayCount = job['dayCount'] as int;
+  final seed = job['seed'] as int;
+  final rainPool = (job['rainPool'] as List).cast<double>();
+
+  final hfPct = job['hfPct'] as double;
+  final mfPct = job['mfPct'] as double;
+  final lfPct = job['lfPct'] as double;
+
+  final rng = Random(seed);
+
+  // Hazard-based base risk (HF dominates)
+  final hazardScore = (0.75 * hfPct + 0.20 * mfPct + 0.05 * lfPct).clamp(
+    0.0,
+    1.0,
+  );
+  final baseRisk = (0.05 + 0.95 * hazardScore).clamp(0.05, 0.95);
+
+  var sumAvgRain = 0.0;
+  var sumProb = 0.0;
+
+  for (var i = 0; i < iterations; i++) {
+    var sum = 0.0;
+    var max1d = 0.0;
+
+    for (var d = 0; d < dayCount; d++) {
+      final v = rainPool[rng.nextInt(rainPool.length)];
+      sum += v;
+      if (v > max1d) max1d = v;
+    }
+
+    final avg = sum / dayCount;
+
+    // Rain signal: weekly total + 1-day spike
+    final sumFactor = (sum / (dayCount * 50.0)).clamp(0.0, 1.0);
+    final spikeFactor = (max1d / 120.0).clamp(0.0, 1.0);
+    final rainSignal = (0.65 * sumFactor + 0.35 * spikeFactor).clamp(0.0, 1.0);
+
+    final prob = (0.70 * baseRisk + 0.30 * rainSignal).clamp(0.0, 1.0);
+
+    sumAvgRain += avg;
+    sumProb += prob;
+  }
+
+  return {'avgRain': sumAvgRain / iterations, 'avgProb': sumProb / iterations};
 }

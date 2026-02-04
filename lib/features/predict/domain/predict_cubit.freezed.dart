@@ -14,15 +14,14 @@ T _$identity<T>(T value) => value;
 /// @nodoc
 mixin _$PredictState {
 
-// ✅ used by loadData()
- bool get loading;// ✅ used by predict()
- bool get predicting;// ✅ shared error channel
- String? get errorMessage;// ✅ used by UI + predict()
- DateTimeRange? get selectedRange;// ✅ used after loading boundaries
- BarangayBoundariesCollection? get boundaries;// ✅ used for dropdown list
- List<String> get barangayOptions;// ✅ used for selection validation
- String get selectedBarangay;// ✅ used by map coloring / results
- Map<String, BarangayFloodRisk> get riskMap;
+// Asset loading
+ bool get loading;// Monte Carlo running
+ bool get predicting;// UI flags
+ bool get showInfoPin;// Error channel
+ String? get errorMessage;// Data needed by UI
+ BarangayBoundariesCollection? get boundaries; List<String> get barangayOptions; Map<String, BarangayFloodRisk> get riskMap;// User selection
+ String get selectedBarangay; DateTimeRange? get selectedRange;// “stale results” logic
+ bool get resultsStale; DateTimeRange? get lastPredictedRange; String get lastPredictedBarangay;
 /// Create a copy of PredictState
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -33,16 +32,16 @@ $PredictStateCopyWith<PredictState> get copyWith => _$PredictStateCopyWithImpl<P
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is PredictState&&(identical(other.loading, loading) || other.loading == loading)&&(identical(other.predicting, predicting) || other.predicting == predicting)&&(identical(other.errorMessage, errorMessage) || other.errorMessage == errorMessage)&&(identical(other.selectedRange, selectedRange) || other.selectedRange == selectedRange)&&(identical(other.boundaries, boundaries) || other.boundaries == boundaries)&&const DeepCollectionEquality().equals(other.barangayOptions, barangayOptions)&&(identical(other.selectedBarangay, selectedBarangay) || other.selectedBarangay == selectedBarangay)&&const DeepCollectionEquality().equals(other.riskMap, riskMap));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is PredictState&&(identical(other.loading, loading) || other.loading == loading)&&(identical(other.predicting, predicting) || other.predicting == predicting)&&(identical(other.showInfoPin, showInfoPin) || other.showInfoPin == showInfoPin)&&(identical(other.errorMessage, errorMessage) || other.errorMessage == errorMessage)&&(identical(other.boundaries, boundaries) || other.boundaries == boundaries)&&const DeepCollectionEquality().equals(other.barangayOptions, barangayOptions)&&const DeepCollectionEquality().equals(other.riskMap, riskMap)&&(identical(other.selectedBarangay, selectedBarangay) || other.selectedBarangay == selectedBarangay)&&(identical(other.selectedRange, selectedRange) || other.selectedRange == selectedRange)&&(identical(other.resultsStale, resultsStale) || other.resultsStale == resultsStale)&&(identical(other.lastPredictedRange, lastPredictedRange) || other.lastPredictedRange == lastPredictedRange)&&(identical(other.lastPredictedBarangay, lastPredictedBarangay) || other.lastPredictedBarangay == lastPredictedBarangay));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,loading,predicting,errorMessage,selectedRange,boundaries,const DeepCollectionEquality().hash(barangayOptions),selectedBarangay,const DeepCollectionEquality().hash(riskMap));
+int get hashCode => Object.hash(runtimeType,loading,predicting,showInfoPin,errorMessage,boundaries,const DeepCollectionEquality().hash(barangayOptions),const DeepCollectionEquality().hash(riskMap),selectedBarangay,selectedRange,resultsStale,lastPredictedRange,lastPredictedBarangay);
 
 @override
 String toString() {
-  return 'PredictState(loading: $loading, predicting: $predicting, errorMessage: $errorMessage, selectedRange: $selectedRange, boundaries: $boundaries, barangayOptions: $barangayOptions, selectedBarangay: $selectedBarangay, riskMap: $riskMap)';
+  return 'PredictState(loading: $loading, predicting: $predicting, showInfoPin: $showInfoPin, errorMessage: $errorMessage, boundaries: $boundaries, barangayOptions: $barangayOptions, riskMap: $riskMap, selectedBarangay: $selectedBarangay, selectedRange: $selectedRange, resultsStale: $resultsStale, lastPredictedRange: $lastPredictedRange, lastPredictedBarangay: $lastPredictedBarangay)';
 }
 
 
@@ -53,7 +52,7 @@ abstract mixin class $PredictStateCopyWith<$Res>  {
   factory $PredictStateCopyWith(PredictState value, $Res Function(PredictState) _then) = _$PredictStateCopyWithImpl;
 @useResult
 $Res call({
- bool loading, bool predicting, String? errorMessage, DateTimeRange? selectedRange, BarangayBoundariesCollection? boundaries, List<String> barangayOptions, String selectedBarangay, Map<String, BarangayFloodRisk> riskMap
+ bool loading, bool predicting, bool showInfoPin, String? errorMessage, BarangayBoundariesCollection? boundaries, List<String> barangayOptions, Map<String, BarangayFloodRisk> riskMap, String selectedBarangay, DateTimeRange? selectedRange, bool resultsStale, DateTimeRange? lastPredictedRange, String lastPredictedBarangay
 });
 
 
@@ -70,17 +69,21 @@ class _$PredictStateCopyWithImpl<$Res>
 
 /// Create a copy of PredictState
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? loading = null,Object? predicting = null,Object? errorMessage = freezed,Object? selectedRange = freezed,Object? boundaries = freezed,Object? barangayOptions = null,Object? selectedBarangay = null,Object? riskMap = null,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? loading = null,Object? predicting = null,Object? showInfoPin = null,Object? errorMessage = freezed,Object? boundaries = freezed,Object? barangayOptions = null,Object? riskMap = null,Object? selectedBarangay = null,Object? selectedRange = freezed,Object? resultsStale = null,Object? lastPredictedRange = freezed,Object? lastPredictedBarangay = null,}) {
   return _then(_self.copyWith(
 loading: null == loading ? _self.loading : loading // ignore: cast_nullable_to_non_nullable
 as bool,predicting: null == predicting ? _self.predicting : predicting // ignore: cast_nullable_to_non_nullable
+as bool,showInfoPin: null == showInfoPin ? _self.showInfoPin : showInfoPin // ignore: cast_nullable_to_non_nullable
 as bool,errorMessage: freezed == errorMessage ? _self.errorMessage : errorMessage // ignore: cast_nullable_to_non_nullable
-as String?,selectedRange: freezed == selectedRange ? _self.selectedRange : selectedRange // ignore: cast_nullable_to_non_nullable
-as DateTimeRange?,boundaries: freezed == boundaries ? _self.boundaries : boundaries // ignore: cast_nullable_to_non_nullable
+as String?,boundaries: freezed == boundaries ? _self.boundaries : boundaries // ignore: cast_nullable_to_non_nullable
 as BarangayBoundariesCollection?,barangayOptions: null == barangayOptions ? _self.barangayOptions : barangayOptions // ignore: cast_nullable_to_non_nullable
-as List<String>,selectedBarangay: null == selectedBarangay ? _self.selectedBarangay : selectedBarangay // ignore: cast_nullable_to_non_nullable
-as String,riskMap: null == riskMap ? _self.riskMap : riskMap // ignore: cast_nullable_to_non_nullable
-as Map<String, BarangayFloodRisk>,
+as List<String>,riskMap: null == riskMap ? _self.riskMap : riskMap // ignore: cast_nullable_to_non_nullable
+as Map<String, BarangayFloodRisk>,selectedBarangay: null == selectedBarangay ? _self.selectedBarangay : selectedBarangay // ignore: cast_nullable_to_non_nullable
+as String,selectedRange: freezed == selectedRange ? _self.selectedRange : selectedRange // ignore: cast_nullable_to_non_nullable
+as DateTimeRange?,resultsStale: null == resultsStale ? _self.resultsStale : resultsStale // ignore: cast_nullable_to_non_nullable
+as bool,lastPredictedRange: freezed == lastPredictedRange ? _self.lastPredictedRange : lastPredictedRange // ignore: cast_nullable_to_non_nullable
+as DateTimeRange?,lastPredictedBarangay: null == lastPredictedBarangay ? _self.lastPredictedBarangay : lastPredictedBarangay // ignore: cast_nullable_to_non_nullable
+as String,
   ));
 }
 
@@ -165,10 +168,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( bool loading,  bool predicting,  String? errorMessage,  DateTimeRange? selectedRange,  BarangayBoundariesCollection? boundaries,  List<String> barangayOptions,  String selectedBarangay,  Map<String, BarangayFloodRisk> riskMap)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( bool loading,  bool predicting,  bool showInfoPin,  String? errorMessage,  BarangayBoundariesCollection? boundaries,  List<String> barangayOptions,  Map<String, BarangayFloodRisk> riskMap,  String selectedBarangay,  DateTimeRange? selectedRange,  bool resultsStale,  DateTimeRange? lastPredictedRange,  String lastPredictedBarangay)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _PredictState() when $default != null:
-return $default(_that.loading,_that.predicting,_that.errorMessage,_that.selectedRange,_that.boundaries,_that.barangayOptions,_that.selectedBarangay,_that.riskMap);case _:
+return $default(_that.loading,_that.predicting,_that.showInfoPin,_that.errorMessage,_that.boundaries,_that.barangayOptions,_that.riskMap,_that.selectedBarangay,_that.selectedRange,_that.resultsStale,_that.lastPredictedRange,_that.lastPredictedBarangay);case _:
   return orElse();
 
 }
@@ -186,10 +189,10 @@ return $default(_that.loading,_that.predicting,_that.errorMessage,_that.selected
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( bool loading,  bool predicting,  String? errorMessage,  DateTimeRange? selectedRange,  BarangayBoundariesCollection? boundaries,  List<String> barangayOptions,  String selectedBarangay,  Map<String, BarangayFloodRisk> riskMap)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( bool loading,  bool predicting,  bool showInfoPin,  String? errorMessage,  BarangayBoundariesCollection? boundaries,  List<String> barangayOptions,  Map<String, BarangayFloodRisk> riskMap,  String selectedBarangay,  DateTimeRange? selectedRange,  bool resultsStale,  DateTimeRange? lastPredictedRange,  String lastPredictedBarangay)  $default,) {final _that = this;
 switch (_that) {
 case _PredictState():
-return $default(_that.loading,_that.predicting,_that.errorMessage,_that.selectedRange,_that.boundaries,_that.barangayOptions,_that.selectedBarangay,_that.riskMap);case _:
+return $default(_that.loading,_that.predicting,_that.showInfoPin,_that.errorMessage,_that.boundaries,_that.barangayOptions,_that.riskMap,_that.selectedBarangay,_that.selectedRange,_that.resultsStale,_that.lastPredictedRange,_that.lastPredictedBarangay);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -206,10 +209,10 @@ return $default(_that.loading,_that.predicting,_that.errorMessage,_that.selected
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( bool loading,  bool predicting,  String? errorMessage,  DateTimeRange? selectedRange,  BarangayBoundariesCollection? boundaries,  List<String> barangayOptions,  String selectedBarangay,  Map<String, BarangayFloodRisk> riskMap)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( bool loading,  bool predicting,  bool showInfoPin,  String? errorMessage,  BarangayBoundariesCollection? boundaries,  List<String> barangayOptions,  Map<String, BarangayFloodRisk> riskMap,  String selectedBarangay,  DateTimeRange? selectedRange,  bool resultsStale,  DateTimeRange? lastPredictedRange,  String lastPredictedBarangay)?  $default,) {final _that = this;
 switch (_that) {
 case _PredictState() when $default != null:
-return $default(_that.loading,_that.predicting,_that.errorMessage,_that.selectedRange,_that.boundaries,_that.barangayOptions,_that.selectedBarangay,_that.riskMap);case _:
+return $default(_that.loading,_that.predicting,_that.showInfoPin,_that.errorMessage,_that.boundaries,_that.barangayOptions,_that.riskMap,_that.selectedBarangay,_that.selectedRange,_that.resultsStale,_that.lastPredictedRange,_that.lastPredictedBarangay);case _:
   return null;
 
 }
@@ -221,39 +224,40 @@ return $default(_that.loading,_that.predicting,_that.errorMessage,_that.selected
 
 
 class _PredictState implements PredictState {
-  const _PredictState({this.loading = false, this.predicting = false, this.errorMessage, this.selectedRange, this.boundaries, final  List<String> barangayOptions = const <String>[], this.selectedBarangay = '', final  Map<String, BarangayFloodRisk> riskMap = const <String, BarangayFloodRisk>{}}): _barangayOptions = barangayOptions,_riskMap = riskMap;
+  const _PredictState({this.loading = false, this.predicting = false, this.showInfoPin = false, this.errorMessage, this.boundaries, final  List<String> barangayOptions = const <String>[], final  Map<String, BarangayFloodRisk> riskMap = const <String, BarangayFloodRisk>{}, this.selectedBarangay = '', this.selectedRange, this.resultsStale = true, this.lastPredictedRange, this.lastPredictedBarangay = ''}): _barangayOptions = barangayOptions,_riskMap = riskMap;
   
 
-// ✅ used by loadData()
+// Asset loading
 @override@JsonKey() final  bool loading;
-// ✅ used by predict()
+// Monte Carlo running
 @override@JsonKey() final  bool predicting;
-// ✅ shared error channel
+// UI flags
+@override@JsonKey() final  bool showInfoPin;
+// Error channel
 @override final  String? errorMessage;
-// ✅ used by UI + predict()
-@override final  DateTimeRange? selectedRange;
-// ✅ used after loading boundaries
+// Data needed by UI
 @override final  BarangayBoundariesCollection? boundaries;
-// ✅ used for dropdown list
  final  List<String> _barangayOptions;
-// ✅ used for dropdown list
 @override@JsonKey() List<String> get barangayOptions {
   if (_barangayOptions is EqualUnmodifiableListView) return _barangayOptions;
   // ignore: implicit_dynamic_type
   return EqualUnmodifiableListView(_barangayOptions);
 }
 
-// ✅ used for selection validation
-@override@JsonKey() final  String selectedBarangay;
-// ✅ used by map coloring / results
  final  Map<String, BarangayFloodRisk> _riskMap;
-// ✅ used by map coloring / results
 @override@JsonKey() Map<String, BarangayFloodRisk> get riskMap {
   if (_riskMap is EqualUnmodifiableMapView) return _riskMap;
   // ignore: implicit_dynamic_type
   return EqualUnmodifiableMapView(_riskMap);
 }
 
+// User selection
+@override@JsonKey() final  String selectedBarangay;
+@override final  DateTimeRange? selectedRange;
+// “stale results” logic
+@override@JsonKey() final  bool resultsStale;
+@override final  DateTimeRange? lastPredictedRange;
+@override@JsonKey() final  String lastPredictedBarangay;
 
 /// Create a copy of PredictState
 /// with the given fields replaced by the non-null parameter values.
@@ -265,16 +269,16 @@ _$PredictStateCopyWith<_PredictState> get copyWith => __$PredictStateCopyWithImp
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _PredictState&&(identical(other.loading, loading) || other.loading == loading)&&(identical(other.predicting, predicting) || other.predicting == predicting)&&(identical(other.errorMessage, errorMessage) || other.errorMessage == errorMessage)&&(identical(other.selectedRange, selectedRange) || other.selectedRange == selectedRange)&&(identical(other.boundaries, boundaries) || other.boundaries == boundaries)&&const DeepCollectionEquality().equals(other._barangayOptions, _barangayOptions)&&(identical(other.selectedBarangay, selectedBarangay) || other.selectedBarangay == selectedBarangay)&&const DeepCollectionEquality().equals(other._riskMap, _riskMap));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _PredictState&&(identical(other.loading, loading) || other.loading == loading)&&(identical(other.predicting, predicting) || other.predicting == predicting)&&(identical(other.showInfoPin, showInfoPin) || other.showInfoPin == showInfoPin)&&(identical(other.errorMessage, errorMessage) || other.errorMessage == errorMessage)&&(identical(other.boundaries, boundaries) || other.boundaries == boundaries)&&const DeepCollectionEquality().equals(other._barangayOptions, _barangayOptions)&&const DeepCollectionEquality().equals(other._riskMap, _riskMap)&&(identical(other.selectedBarangay, selectedBarangay) || other.selectedBarangay == selectedBarangay)&&(identical(other.selectedRange, selectedRange) || other.selectedRange == selectedRange)&&(identical(other.resultsStale, resultsStale) || other.resultsStale == resultsStale)&&(identical(other.lastPredictedRange, lastPredictedRange) || other.lastPredictedRange == lastPredictedRange)&&(identical(other.lastPredictedBarangay, lastPredictedBarangay) || other.lastPredictedBarangay == lastPredictedBarangay));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,loading,predicting,errorMessage,selectedRange,boundaries,const DeepCollectionEquality().hash(_barangayOptions),selectedBarangay,const DeepCollectionEquality().hash(_riskMap));
+int get hashCode => Object.hash(runtimeType,loading,predicting,showInfoPin,errorMessage,boundaries,const DeepCollectionEquality().hash(_barangayOptions),const DeepCollectionEquality().hash(_riskMap),selectedBarangay,selectedRange,resultsStale,lastPredictedRange,lastPredictedBarangay);
 
 @override
 String toString() {
-  return 'PredictState(loading: $loading, predicting: $predicting, errorMessage: $errorMessage, selectedRange: $selectedRange, boundaries: $boundaries, barangayOptions: $barangayOptions, selectedBarangay: $selectedBarangay, riskMap: $riskMap)';
+  return 'PredictState(loading: $loading, predicting: $predicting, showInfoPin: $showInfoPin, errorMessage: $errorMessage, boundaries: $boundaries, barangayOptions: $barangayOptions, riskMap: $riskMap, selectedBarangay: $selectedBarangay, selectedRange: $selectedRange, resultsStale: $resultsStale, lastPredictedRange: $lastPredictedRange, lastPredictedBarangay: $lastPredictedBarangay)';
 }
 
 
@@ -285,7 +289,7 @@ abstract mixin class _$PredictStateCopyWith<$Res> implements $PredictStateCopyWi
   factory _$PredictStateCopyWith(_PredictState value, $Res Function(_PredictState) _then) = __$PredictStateCopyWithImpl;
 @override @useResult
 $Res call({
- bool loading, bool predicting, String? errorMessage, DateTimeRange? selectedRange, BarangayBoundariesCollection? boundaries, List<String> barangayOptions, String selectedBarangay, Map<String, BarangayFloodRisk> riskMap
+ bool loading, bool predicting, bool showInfoPin, String? errorMessage, BarangayBoundariesCollection? boundaries, List<String> barangayOptions, Map<String, BarangayFloodRisk> riskMap, String selectedBarangay, DateTimeRange? selectedRange, bool resultsStale, DateTimeRange? lastPredictedRange, String lastPredictedBarangay
 });
 
 
@@ -302,17 +306,21 @@ class __$PredictStateCopyWithImpl<$Res>
 
 /// Create a copy of PredictState
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? loading = null,Object? predicting = null,Object? errorMessage = freezed,Object? selectedRange = freezed,Object? boundaries = freezed,Object? barangayOptions = null,Object? selectedBarangay = null,Object? riskMap = null,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? loading = null,Object? predicting = null,Object? showInfoPin = null,Object? errorMessage = freezed,Object? boundaries = freezed,Object? barangayOptions = null,Object? riskMap = null,Object? selectedBarangay = null,Object? selectedRange = freezed,Object? resultsStale = null,Object? lastPredictedRange = freezed,Object? lastPredictedBarangay = null,}) {
   return _then(_PredictState(
 loading: null == loading ? _self.loading : loading // ignore: cast_nullable_to_non_nullable
 as bool,predicting: null == predicting ? _self.predicting : predicting // ignore: cast_nullable_to_non_nullable
+as bool,showInfoPin: null == showInfoPin ? _self.showInfoPin : showInfoPin // ignore: cast_nullable_to_non_nullable
 as bool,errorMessage: freezed == errorMessage ? _self.errorMessage : errorMessage // ignore: cast_nullable_to_non_nullable
-as String?,selectedRange: freezed == selectedRange ? _self.selectedRange : selectedRange // ignore: cast_nullable_to_non_nullable
-as DateTimeRange?,boundaries: freezed == boundaries ? _self.boundaries : boundaries // ignore: cast_nullable_to_non_nullable
+as String?,boundaries: freezed == boundaries ? _self.boundaries : boundaries // ignore: cast_nullable_to_non_nullable
 as BarangayBoundariesCollection?,barangayOptions: null == barangayOptions ? _self._barangayOptions : barangayOptions // ignore: cast_nullable_to_non_nullable
-as List<String>,selectedBarangay: null == selectedBarangay ? _self.selectedBarangay : selectedBarangay // ignore: cast_nullable_to_non_nullable
-as String,riskMap: null == riskMap ? _self._riskMap : riskMap // ignore: cast_nullable_to_non_nullable
-as Map<String, BarangayFloodRisk>,
+as List<String>,riskMap: null == riskMap ? _self._riskMap : riskMap // ignore: cast_nullable_to_non_nullable
+as Map<String, BarangayFloodRisk>,selectedBarangay: null == selectedBarangay ? _self.selectedBarangay : selectedBarangay // ignore: cast_nullable_to_non_nullable
+as String,selectedRange: freezed == selectedRange ? _self.selectedRange : selectedRange // ignore: cast_nullable_to_non_nullable
+as DateTimeRange?,resultsStale: null == resultsStale ? _self.resultsStale : resultsStale // ignore: cast_nullable_to_non_nullable
+as bool,lastPredictedRange: freezed == lastPredictedRange ? _self.lastPredictedRange : lastPredictedRange // ignore: cast_nullable_to_non_nullable
+as DateTimeRange?,lastPredictedBarangay: null == lastPredictedBarangay ? _self.lastPredictedBarangay : lastPredictedBarangay // ignore: cast_nullable_to_non_nullable
+as String,
   ));
 }
 

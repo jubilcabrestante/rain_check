@@ -2,6 +2,7 @@ import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:gap/gap.dart';
+
 import 'package:rain_check/app/themes/colors.dart';
 import 'package:rain_check/core/shared/app_custom_button.dart';
 import 'package:rain_check/core/shared/app_drop_down_field.dart';
@@ -19,8 +20,8 @@ class PredictScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return BlocProvider(
       create: (_) => PredictCubit(
-        loader: DataLoader(),
-        monteCarloService: MonteCarloFloodService(),
+        loader: const DataLoader(),
+        monteCarloService: const MonteCarloFloodService(iterations: 1000),
       )..loadData(),
       child: const _PredictView(),
     );
@@ -47,6 +48,12 @@ class _PredictView extends StatelessWidget {
       builder: (context, state) {
         final cubit = context.read<PredictCubit>();
         final boundaries = state.boundaries;
+
+        final canPredict =
+            !state.loading &&
+            !state.predicting &&
+            state.selectedRange != null &&
+            state.selectedBarangay.trim().isNotEmpty;
 
         return Scaffold(
           appBar: AppBar(
@@ -81,15 +88,19 @@ class _PredictView extends StatelessWidget {
                             ? null
                             : state.selectedBarangay,
                         optionLabel: (b) => b,
-                        onChanged: cubit.setBarangay,
+                        onChanged: (b) => cubit.setBarangay(b, showPin: true),
                       ),
 
                       const Gap(12),
 
+                      // ✅ This will now show spinner properly because:
+                      // 1) predicting=true triggers rebuild
+                      // 2) Monte Carlo runs off the UI isolate
                       AppElevatedButton(
                         width: double.infinity,
-                        text: state.predicting ? "Predicting..." : "Predict",
-                        onPressed: state.predicting ? null : cubit.predict,
+                        text: 'Predict',
+                        isLoading: state.predicting,
+                        onPressed: canPredict ? cubit.predict : null,
                       ),
                     ],
                   ),
@@ -108,6 +119,18 @@ class _PredictView extends StatelessWidget {
                           selectedBarangayName: state.selectedBarangay.isEmpty
                               ? null
                               : state.selectedBarangay,
+                          showInfoPin: state.showInfoPin,
+                          onClosePin: () => cubit.setInfoPinVisible(false),
+
+                          // ✅ Tap polygon -> update Cubit -> dropdown updates
+                          onBarangaySelected: (name) {
+                            if (name == null) {
+                              cubit.setInfoPinVisible(false);
+                              cubit.setBarangay('', showPin: false);
+                              return;
+                            }
+                            cubit.setBarangay(name, showPin: true);
+                          },
                         ),
                 ),
               ],

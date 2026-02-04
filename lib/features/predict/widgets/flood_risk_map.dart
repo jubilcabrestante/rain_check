@@ -11,14 +11,26 @@ class FloodRiskMap extends StatefulWidget {
   final BarangayBoundariesCollection boundaries;
   final Map<String, BarangayFloodRisk> riskDataMap;
 
-  /// ✅ currently selected from dropdown (optional)
+  /// Controlled selection from parent (Cubit)
   final String? selectedBarangayName;
+
+  /// Controlled pin visibility from parent (Cubit)
+  final bool showInfoPin;
+
+  /// Map -> parent callback (tap polygon)
+  final ValueChanged<String?>? onBarangaySelected;
+
+  /// Pin close callback
+  final VoidCallback? onClosePin;
 
   const FloodRiskMap({
     super.key,
     required this.boundaries,
     required this.riskDataMap,
     this.selectedBarangayName,
+    this.showInfoPin = false,
+    this.onBarangaySelected,
+    this.onClosePin,
   });
 
   @override
@@ -28,24 +40,15 @@ class FloodRiskMap extends StatefulWidget {
 class _FloodRiskMapState extends State<FloodRiskMap> {
   final MapController _mapController = MapController();
 
-  String? _selectedBarangay;
-  LatLng? _pinPosition;
-
   late List<_TapPolygon> _tapPolygons;
-
-  // simple double-tap detector
-  DateTime? _lastTapAt;
-  LatLng? _lastTapLatLng;
 
   @override
   void initState() {
     super.initState();
     _tapPolygons = _buildTapPolygons();
 
-    // ✅ Fit to Puerto Princesa bounds at start
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      final bounds = _boundsOfAllFeatures();
-      _fitBounds(bounds);
+      _fitBounds(_boundsOfAllFeatures());
     });
   }
 
@@ -53,36 +56,28 @@ class _FloodRiskMapState extends State<FloodRiskMap> {
   void didUpdateWidget(covariant FloodRiskMap oldWidget) {
     super.didUpdateWidget(oldWidget);
 
+    // Rebuild tap polygons if inputs changed
     if (oldWidget.boundaries != widget.boundaries ||
         oldWidget.riskDataMap != widget.riskDataMap) {
       _tapPolygons = _buildTapPolygons();
-      setState(() {});
     }
 
-    // ✅ If dropdown selects a barangay → zoom to that barangay bounds
+    // Dropdown (or external) selection changed -> zoom to barangay
     if (oldWidget.selectedBarangayName != widget.selectedBarangayName &&
-        widget.selectedBarangayName != null &&
-        widget.selectedBarangayName!.isNotEmpty) {
-      final feature = widget.boundaries.features.firstWhere(
-        (f) =>
-            f.properties.brgyName.toLowerCase() ==
-            widget.selectedBarangayName!.toLowerCase(),
-        orElse: () => widget.boundaries.features.first,
-      );
-
-      final b = _boundsOfFeature(feature);
-      _fitBounds(b);
-
-      // also “select” it (so single tap isn’t required)
-      setState(() {
-        _selectedBarangay = feature.properties.brgyName;
-        _pinPosition = null; // info only on double tap
-      });
+        (widget.selectedBarangayName ?? '').isNotEmpty) {
+      final f = _findFeature(widget.selectedBarangayName!);
+      if (f != null) _fitBounds(_boundsOfFeature(f));
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final selected = (widget.selectedBarangayName ?? '').trim();
+    final hasSelected = selected.isNotEmpty;
+
+    final pinFeature = hasSelected ? _findFeature(selected) : null;
+    final pinPos = pinFeature != null ? _centerOfFeature(pinFeature) : null;
+
     return FlutterMap(
       mapController: _mapController,
       options: MapOptions(
@@ -90,13 +85,7 @@ class _FloodRiskMapState extends State<FloodRiskMap> {
         initialZoom: 12,
         minZoom: 10,
         maxZoom: 18,
-
-        // ✅ Prevent flutter_map default double-tap zoom (we want double tap = show info)
-        interactionOptions: const InteractionOptions(
-          flags: InteractiveFlag.all & ~InteractiveFlag.doubleTapZoom,
-        ),
-
-        onTap: (tapPosition, latLng) => _handleTapOrDoubleTap(latLng),
+        onTap: (tapPosition, latLng) => _handleTap(latLng),
       ),
       children: [
         TileLayer(
@@ -104,28 +93,22 @@ class _FloodRiskMapState extends State<FloodRiskMap> {
           userAgentPackageName: 'com.example.rain_check',
         ),
 
-        // ✅ Polygons should be on TOP of tiles (tile behind)
         PolygonLayer(polygons: _buildPolygons()),
-
-        // ✅ Barangay name labels
         MarkerLayer(markers: _buildBarangayLabels()),
 
-        // ✅ Info pin on double tap
-        if (_selectedBarangay != null && _pinPosition != null)
+        // ✅ Info pin (controlled by Cubit)
+        if (widget.showInfoPin && hasSelected && pinPos != null)
           MarkerLayer(
             markers: [
               Marker(
-                point: _pinPosition!,
+                point: pinPos,
                 width: 300,
                 height: 210,
                 child: BarangayInfoPin(
                   riskData:
-                      widget.riskDataMap[_selectedBarangay!] ??
-                      BarangayFloodRisk.defaultLow(_selectedBarangay!),
-                  onClose: () => setState(() {
-                    _selectedBarangay = null;
-                    _pinPosition = null;
-                  }),
+                      widget.riskDataMap[selected] ??
+                      BarangayFloodRisk.defaultLow(selected),
+                  onClose: widget.onClosePin,
                 ),
               ),
             ],
@@ -134,52 +117,22 @@ class _FloodRiskMapState extends State<FloodRiskMap> {
     );
   }
 
-  // ------------------------------------------------------------
-  // Tap logic: single tap selects barangay, double tap shows info
-  // ------------------------------------------------------------
-  void _handleTapOrDoubleTap(LatLng tap) {
-    final now = DateTime.now();
-    final isDoubleTap =
-        _lastTapAt != null &&
-        now.difference(_lastTapAt!).inMilliseconds <= 300 &&
-        _lastTapLatLng != null &&
-        _distanceMeters(_lastTapLatLng!, tap) <= 25;
-
-    _lastTapAt = now;
-    _lastTapLatLng = tap;
-
+  // --------------------------
+  // Tap -> select barangay
+  // --------------------------
+  void _handleTap(LatLng tap) {
     final hit = _tapPolygons.firstWhere(
       (p) => _pointInPolygon(tap, p.points),
       orElse: () => const _TapPolygon.empty(),
     );
 
     if (!hit.isValid) {
-      setState(() {
-        _selectedBarangay = null;
-        _pinPosition = null;
-      });
+      widget.onBarangaySelected?.call(null);
       return;
     }
 
-    if (isDoubleTap) {
-      // ✅ show info
-      setState(() {
-        _selectedBarangay = hit.name;
-        _pinPosition = hit.center;
-      });
-      return;
-    }
-
-    // ✅ single tap just selects
-    setState(() {
-      _selectedBarangay = hit.name;
-      _pinPosition = null;
-    });
-  }
-
-  double _distanceMeters(LatLng a, LatLng b) {
-    const distance = Distance();
-    return distance(a, b);
+    // ✅ Select barangay in Cubit -> dropdown updates + pin can show
+    widget.onBarangaySelected?.call(hit.name);
   }
 
   // --------------------------
@@ -190,20 +143,17 @@ class _FloodRiskMapState extends State<FloodRiskMap> {
 
     for (final feature in widget.boundaries.features) {
       final name = feature.properties.brgyName;
-      final riskData =
+      final risk =
           widget.riskDataMap[name] ?? BarangayFloodRisk.defaultLow(name);
 
-      final barangayPolygon = BarangayPolygon(
-        feature: feature,
-        riskData: riskData,
-      );
+      final poly = BarangayPolygon(feature: feature, riskData: risk);
 
-      for (final ring in barangayPolygon.polygonPoints) {
+      for (final ring in poly.polygonPoints) {
         polygons.add(
           Polygon(
             points: ring,
-            color: barangayPolygon.fillColor,
-            borderColor: barangayPolygon.borderColor,
+            color: poly.fillColor,
+            borderColor: poly.borderColor,
             borderStrokeWidth: 2.0,
           ),
         );
@@ -214,14 +164,13 @@ class _FloodRiskMapState extends State<FloodRiskMap> {
   }
 
   // --------------------------
-  // Labels at centroid
+  // Labels
   // --------------------------
   List<Marker> _buildBarangayLabels() {
     final markers = <Marker>[];
 
     for (final feature in widget.boundaries.features) {
       final name = feature.properties.brgyName;
-
       final center = _centerOfFeature(feature);
 
       markers.add(
@@ -255,29 +204,29 @@ class _FloodRiskMapState extends State<FloodRiskMap> {
     return markers;
   }
 
-  LatLng _centerOfFeature(BarangayBoundaryFeature feature) {
-    final b = _boundsOfFeature(feature);
-    // In older versions: use the two corners you gave to LatLngBounds
-    final sw = b.southWest;
-    final ne = b.northEast;
-    return LatLng(
-      (sw.latitude + ne.latitude) / 2,
-      (sw.longitude + ne.longitude) / 2,
-    );
+  // --------------------------
+  // Feature lookup
+  // --------------------------
+  BarangayBoundaryFeature? _findFeature(String name) {
+    final n = name.trim().toLowerCase();
+    for (final f in widget.boundaries.features) {
+      if (f.properties.brgyName.trim().toLowerCase() == n) return f;
+    }
+    return null;
   }
 
   // --------------------------
-  // Tap polygons
+  // Tap polygons for hit-testing
   // --------------------------
   List<_TapPolygon> _buildTapPolygons() {
     final list = <_TapPolygon>[];
 
     for (final feature in widget.boundaries.features) {
       final name = feature.properties.brgyName;
-      final riskData =
+      final risk =
           widget.riskDataMap[name] ?? BarangayFloodRisk.defaultLow(name);
 
-      final poly = BarangayPolygon(feature: feature, riskData: riskData);
+      final poly = BarangayPolygon(feature: feature, riskData: risk);
 
       for (final ring in poly.polygonPoints) {
         final center = _centerOfPoints(ring);
@@ -285,8 +234,10 @@ class _FloodRiskMapState extends State<FloodRiskMap> {
       }
     }
 
+    // Prefer smaller polygons first? Usually you want smaller “inside” polygons to win.
+    // Sorting by area ASC helps inner polygons be hit first.
     list.sort(
-      (a, b) => _polygonArea(b.points).compareTo(_polygonArea(a.points)),
+      (a, b) => _polygonArea(a.points).compareTo(_polygonArea(b.points)),
     );
     return list;
   }
@@ -313,9 +264,8 @@ class _FloodRiskMapState extends State<FloodRiskMap> {
 
   LatLng _centerOfPoints(List<LatLng> points) {
     if (points.isEmpty) return const LatLng(9.7402, 118.7354);
-
-    double sumLat = 0;
-    double sumLng = 0;
+    var sumLat = 0.0;
+    var sumLng = 0.0;
     for (final p in points) {
       sumLat += p.latitude;
       sumLng += p.longitude;
@@ -325,7 +275,7 @@ class _FloodRiskMapState extends State<FloodRiskMap> {
 
   double _polygonArea(List<LatLng> poly) {
     if (poly.length < 3) return 0;
-    double area = 0;
+    var area = 0.0;
     for (int i = 0, j = poly.length - 1; i < poly.length; j = i++) {
       area +=
           (poly[j].longitude + poly[i].longitude) *
@@ -334,10 +284,18 @@ class _FloodRiskMapState extends State<FloodRiskMap> {
     return area.abs() / 2.0;
   }
 
-  LatLngBounds _boundsOfAllFeatures() {
-    // start with a dummy, then expand
-    LatLng? firstPoint;
+  LatLng _centerOfFeature(BarangayBoundaryFeature feature) {
+    final b = _boundsOfFeature(feature);
+    final sw = b.southWest;
+    final ne = b.northEast;
+    return LatLng(
+      (sw.latitude + ne.latitude) / 2,
+      (sw.longitude + ne.longitude) / 2,
+    );
+  }
 
+  LatLngBounds _boundsOfAllFeatures() {
+    LatLng? first;
     double minLat = 0, maxLat = 0, minLng = 0, maxLng = 0;
 
     for (final feature in widget.boundaries.features) {
@@ -347,8 +305,8 @@ class _FloodRiskMapState extends State<FloodRiskMap> {
             final lng = coord[0];
             final lat = coord[1];
 
-            if (firstPoint == null) {
-              firstPoint = LatLng(lat, lng);
+            if (first == null) {
+              first = LatLng(lat, lng);
               minLat = maxLat = lat;
               minLng = maxLng = lng;
             } else {
@@ -362,24 +320,18 @@ class _FloodRiskMapState extends State<FloodRiskMap> {
       }
     }
 
-    // fallback if file is empty / broken
-    if (firstPoint == null) {
+    if (first == null) {
       return LatLngBounds(
         const LatLng(9.65, 118.60),
         const LatLng(9.90, 118.90),
       );
     }
 
-    // LatLngBounds expects 2 corners: southwest & northeast (works for older versions)
-    return LatLngBounds(
-      LatLng(minLat, minLng), // SW
-      LatLng(maxLat, maxLng), // NE
-    );
+    return LatLngBounds(LatLng(minLat, minLng), LatLng(maxLat, maxLng));
   }
 
   LatLngBounds _boundsOfFeature(BarangayBoundaryFeature feature) {
-    LatLng? firstPoint;
-
+    LatLng? first;
     double minLat = 0, maxLat = 0, minLng = 0, maxLng = 0;
 
     for (final polygon in feature.geometry.coordinates) {
@@ -388,8 +340,8 @@ class _FloodRiskMapState extends State<FloodRiskMap> {
           final lng = coord[0];
           final lat = coord[1];
 
-          if (firstPoint == null) {
-            firstPoint = LatLng(lat, lng);
+          if (first == null) {
+            first = LatLng(lat, lng);
             minLat = maxLat = lat;
             minLng = maxLng = lng;
           } else {
@@ -402,8 +354,7 @@ class _FloodRiskMapState extends State<FloodRiskMap> {
       }
     }
 
-    // fallback (avoid crash if that feature is empty)
-    if (firstPoint == null) {
+    if (first == null) {
       return LatLngBounds(
         const LatLng(9.65, 118.60),
         const LatLng(9.90, 118.90),
@@ -414,7 +365,6 @@ class _FloodRiskMapState extends State<FloodRiskMap> {
   }
 
   void _fitBounds(LatLngBounds bounds) {
-    // flutter_map v6+:
     _mapController.fitCamera(
       CameraFit.bounds(bounds: bounds, padding: const EdgeInsets.all(24)),
     );
