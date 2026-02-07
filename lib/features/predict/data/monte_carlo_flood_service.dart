@@ -20,6 +20,7 @@ class MonteCarloFloodService {
   /// ✅ Data-driven Monte Carlo:
   /// - Rainfall samples come from your CSV (month/day filtered)
   /// - Hazard base is from HF/MF/LF polygon areas vs barangay area
+  /// - Rain normalization thresholds come from the rainPool (not constants)
   /// - Heavy loop runs in background isolate (`compute`)
   Future<BarangayFloodRisk> simulateBarangay({
     required String barangayName,
@@ -44,6 +45,14 @@ class MonteCarloFloodService {
       return BarangayFloodRisk.defaultLow(barangayName);
     }
 
+    // ✅ Dynamic thresholds from the selected date-window pool
+    final heavyDailyRef = _percentile(pool, 0.90); // P90 daily rainfall
+    final spikeRef = _maxOf(pool); // max daily rainfall
+
+    // safety against divide-by-zero
+    final safeHeavyDailyRef = heavyDailyRef > 0 ? heavyDailyRef : 1.0;
+    final safeSpikeRef = spikeRef > 0 ? spikeRef : 1.0;
+
     // Deterministic seed so results are stable for same inputs
     final seed = _stableSeed(barangayName, range, iterations);
 
@@ -55,6 +64,10 @@ class MonteCarloFloodService {
       'hfPct': hazard.hfPct,
       'mfPct': hazard.mfPct,
       'lfPct': hazard.lfPct,
+
+      // ✅ pass dynamic refs to worker
+      'heavyDailyRef': safeHeavyDailyRef,
+      'spikeRef': safeSpikeRef,
     });
 
     final avgRain = (out['avgRain'] as double).clamp(0.0, 10000.0);
@@ -185,6 +198,29 @@ class MonteCarloFloodService {
     if (intensity >= 10) return RainAmount.moderate;
     return RainAmount.low;
   }
+
+  // --------------------------
+  // ✅ Helpers for dynamic thresholds
+  // --------------------------
+  double _maxOf(List<double> xs) {
+    var m = double.negativeInfinity;
+    for (final v in xs) {
+      if (v > m) m = v;
+    }
+    return m.isFinite ? m : 0.0;
+  }
+
+  /// p in [0..1], ex: 0.90 for P90
+  double _percentile(List<double> xs, double p) {
+    if (xs.isEmpty) return 0.0;
+    final sorted = List<double>.from(xs)..sort();
+    final pos = (p.clamp(0.0, 1.0) * (sorted.length - 1));
+    final lo = pos.floor();
+    final hi = pos.ceil();
+    if (lo == hi) return sorted[lo];
+    final w = pos - lo;
+    return sorted[lo] * (1 - w) + sorted[hi] * w;
+  }
 }
 
 class _Hazard {
@@ -205,6 +241,10 @@ Map<String, double> _mcWorker(Map<String, Object?> job) {
   final hfPct = job['hfPct'] as double;
   final mfPct = job['mfPct'] as double;
   final lfPct = job['lfPct'] as double;
+
+  // ✅ dynamic refs
+  final heavyDailyRef = job['heavyDailyRef'] as double;
+  final spikeRef = job['spikeRef'] as double;
 
   final rng = Random(seed);
 
@@ -230,9 +270,9 @@ Map<String, double> _mcWorker(Map<String, Object?> job) {
 
     final avg = sum / dayCount;
 
-    // Rain signal: weekly total + 1-day spike
-    final sumFactor = (sum / (dayCount * 50.0)).clamp(0.0, 1.0);
-    final spikeFactor = (max1d / 120.0).clamp(0.0, 1.0);
+    // ✅ Rain signal: weekly total + 1-day spike (DATA-DRIVEN)
+    final sumFactor = (sum / (dayCount * heavyDailyRef)).clamp(0.0, 1.0);
+    final spikeFactor = (max1d / spikeRef).clamp(0.0, 1.0);
     final rainSignal = (0.65 * sumFactor + 0.35 * spikeFactor).clamp(0.0, 1.0);
 
     final prob = (0.70 * baseRisk + 0.30 * rainSignal).clamp(0.0, 1.0);
