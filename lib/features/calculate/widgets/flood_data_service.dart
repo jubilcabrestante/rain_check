@@ -6,12 +6,9 @@ import 'package:rain_check/core/repository/flood_model/flood_data_model.dart';
 import 'package:rain_check/core/repository/rain_fall_model/rainfall_data_model.dart';
 import 'package:rain_check/core/utils/data_loader.dart';
 import 'package:rain_check/core/utils/flood_data_extensions.dart';
+
 import 'package:rain_check/features/calculate/widgets/flood_risk_logistic_regression_calibrated.dart';
 
-/// Service responsible for:
-/// ✅ Loading GeoJSON + CSV from assets
-/// ✅ Computing barangay flood features (HF/MF/LF %, density, urban)
-/// ✅ Calibrating normalization stats (mean/std) FROM FILES (not random)
 class FloodDataService {
   static final FloodDataService _instance = FloodDataService._internal();
   factory FloodDataService() => _instance;
@@ -21,14 +18,20 @@ class FloodDataService {
 
   FloodDataCollection? _floodData;
   BarangayBoundariesCollection? _boundaries;
+
+  // Optional: PPC station-wide rainfall
   RainfallDataCollection? _rainfall;
 
   late FloodRiskLogisticRegression _model;
 
-  bool get isLoaded =>
-      _floodData != null && _boundaries != null && _rainfall != null;
+  bool get isLoaded => _floodData != null && _boundaries != null;
 
-  Future<void> initialize() async {
+  Future<void> initialize({
+    bool useRainfallStats = true,
+    int trainIterations = 2500,
+    double learningRate = 0.12,
+    double l2 = 1e-2,
+  }) async {
     if (isLoaded) return;
 
     final results = await Future.wait([
@@ -38,21 +41,30 @@ class FloodDataService {
       _loader.loadBarangayBoundaries(
         assetPath: 'assets/data/ppc_boundaries_wgs84.geojson',
       ),
-      _loader.loadRainfallCsv(assetPath: 'assets/data/ppc_daily_data.csv'),
     ]);
 
     _floodData = results[0] as FloodDataCollection;
     _boundaries = results[1] as BarangayBoundariesCollection;
-    _rainfall = results[2] as RainfallDataCollection;
 
-    // ✅ Build model params using your real dataset distributions (files).
-    final params = ModelParamsBuilder.buildFromFiles(
+    if (useRainfallStats) {
+      try {
+        _rainfall = await _loader.loadRainfallCsv(
+          assetPath: 'assets/data/ppc_daily_data.csv',
+        );
+      } catch (_) {
+        _rainfall = null;
+      }
+    } else {
+      _rainfall = null;
+    }
+
+    final params = ModelParamsBuilder.trainFromFiles(
       boundaries: boundaries,
       floodData: floodData,
-      rainfallData: rainfallData,
-      // keep your calibrated coefficients (not random)
-      baseCoefficients: ModelCoefficients.calibratedPpc(),
-      intercept: -4.2,
+      rainfallData: _rainfall,
+      iterations: trainIterations,
+      learningRate: learningRate,
+      l2: l2,
     );
 
     _model = FloodRiskLogisticRegression(params: params);
@@ -70,17 +82,18 @@ class FloodDataService {
     return v;
   }
 
-  RainfallDataCollection get rainfallData {
-    final v = _rainfall;
-    if (v == null) throw StateError('FloodDataService not initialized');
-    return v;
-  }
+  RainfallDataCollection? get rainfallDataOrNull => _rainfall;
 
-  /// Main calculate using ML logistic regression
   LogisticFloodResult calculateFloodRiskML({
     required String barangayName,
     required double rainfallInMm,
   }) {
+    if (!isLoaded) {
+      throw StateError(
+        'FloodDataService not initialized. Call initialize() first.',
+      );
+    }
+
     final boundary = boundaries.findByName(barangayName);
     if (boundary == null) {
       throw StateError('Boundary not found for $barangayName');
@@ -131,9 +144,6 @@ class FloodDataService {
     }
   }
 
-  /// ✅ Better barangay list:
-  /// - uses boundaries list (complete)
-  /// - not only those with flood features
   List<String> getAllBarangayNames() {
     final names =
         boundaries.features.map((f) => f.properties.brgyName).toSet().toList()
@@ -142,7 +152,6 @@ class FloodDataService {
   }
 
   double _bestAreaHa(BarangayBoundaryFeature b) {
-    // Some datasets use Area_has, others AreaInHect, sometimes one is 0.
     final a1 = b.properties.areaHas;
     final a2 = b.properties.areaInHect;
     return max(a1, a2);
