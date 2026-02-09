@@ -28,6 +28,24 @@ final List<GuideSection> raincheckGuide = [
       'View the real-time flood likelihood',
     ],
   ),
+
+  // ✅ Added: Rainfall category guide (from your image)
+  GuideSection(
+    numbered: false,
+    title: 'Rainfall Intensity Guide',
+    description:
+        'Use these categories when selecting rainfall intensity (mm/day):',
+    steps: [
+      'Cloudy: 0',
+      'Light Rain: 0.5–20',
+      'Medium Rain: 20–50',
+      'Heavy Rain: 50–100',
+      'Very Heavy Rain: 100–150',
+      'Extreme Rain: >150',
+    ],
+    subDescription: 'Source: BMKG (2024)',
+  ),
+
   GuideSection(
     title: 'Predict (Future Flood Forecast)',
     description:
